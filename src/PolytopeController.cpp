@@ -9,11 +9,23 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
   robotPolytope_->addToLogger(logger());
   robotPolytope_->addToGUI(*gui());
 
+  wallPose_ = robot("wall").posW();
+  wallPose_.translation() += Eigen::Vector3d(-0.05, 0.4, 1.1);
+  gui()->addElement({"Wall"}, mc_rtc::gui::Transform(
+                                 "centre", [this]() -> const sva::PTransformd & { return wallPose_; },
+                                 [this](const sva::PTransformd & p) { wallPose_ = p; })
+
+  );
+
   mc_rtc::log::success("PolytopeController init done ");
 }
 
 bool PolytopeController::run()
 {
+  // move wall around using gui pointer
+  sva::PTransformd pos = wallPose_;
+  pos.translation() -= Eigen::Vector3d(-0.05, 0.4, 1.1);
+  robot("wall").posW(pos);
 
   auto contacts = solver().contacts();
   updateContactSet(contacts, robot().robotIndex());

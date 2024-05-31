@@ -20,6 +20,7 @@ struct PolytopeController_DLLAPI PolytopeController : public mc_control::fsm::Co
 
 private:
 
+  sva::PTransformd wallPose_;
   std::shared_ptr<MCStabilityPolytope> robotPolytope_;
   std::shared_ptr<ContactSet> contactSet_;
   bool firstPolyOK_ = false;

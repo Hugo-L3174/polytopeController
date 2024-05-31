@@ -20,6 +20,11 @@ VerboseStateFactory: false
 robots:
   ground:
     module: env/ground
+  wall:
+    module: env/door
+    init_pos:
+      translation: [0.60, -0.5, 0.0]
+      rotation: [0.0, 0.0, 0.0]
 # General constraints, always on
 constraints:
 - type: contact
