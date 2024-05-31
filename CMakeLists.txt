@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.5)
 
 set(CXX_DISABLE_WERROR 1)
 set(CMAKE_CXX_STANDARD 11)
@@ -12,6 +12,8 @@ project(${PROJECT_NAME} CXX)
 # Check if the project is built inside mc_rtc
 if(NOT TARGET mc_rtc::mc_control)
   find_package(mc_rtc REQUIRED)
+  find_package(Stabiliplus REQUIRED)
+  find_package(sch-core REQUIRED)
 endif()
 
 add_subdirectory(src)

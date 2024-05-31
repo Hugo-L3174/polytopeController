@@ -54,3 +54,38 @@ transitions:
 - [PolytopeController_Initial, OK, PolytopeController_Initial, Strict]
 # Initial state
 init: PolytopeController_Initial
+
+
+StabilityPolytope:
+  hrp4:
+    polyhedronOK: &polyhedron
+      triangle_color: [1.0, 0.0, 0.0, 0.3]
+      show_triangle: true
+      use_triangle_color: false
+      edges:
+        color: [0.75, 0.75, 0.75, 1.0]
+        width: 0.003
+        style: solid
+      show_edges: false
+      fixed_edge_color: true
+      vertices:
+        color: [1.0, 0.0, 0.0, 1.0]
+        scale: 0.02
+      show_vertices: false
+      fixed_vertices_color: true
+    polyhedronNOK:
+      <<: *polyhedron
+      triangle_color: [0.0, 0.0, 1.0, 0.3]
+  human:
+    polyhedronOK:
+      <<: *polyhedron
+      triangle_color: [0.0, 1.0, 0.0, 0.4]
+    polyhedronNOK:
+      <<: *polyhedron
+      triangle_color: [1.0, 0.0, 0.0, 0.4]
+  e2dr:
+    polyhedronOK:
+      <<: *polyhedron
+    polyhedronNOK:
+      <<: *polyhedron
+      triangle_color: [0.0, 0.0, 1.0, 0.3]
