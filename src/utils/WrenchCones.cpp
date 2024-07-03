@@ -51,25 +51,58 @@ std::vector<Eigen::Vector3d> generateCone(int numberOfFrictionSides, Eigen::Matr
 }
 
 // application point is around what the generators must be applied
-Eigen::MatrixXd computeGeneratorsMatrix(Eigen::Vector3d applicationPoint, int numberOfFrictionSides, std::vector<std::pair<std::pair<double, double>, sva::PTransformd>> contacts, double m_frictionCoef)
+Eigen::MatrixXd computeGeneratorsMatrixSingleCone(Eigen::Vector3d applicationPoint, int numberOfFrictionSides, std::pair<std::pair<double, double>, sva::PTransformd> contactSurface, double m_frictionCoef)
 {
     Eigen::MatrixXd genMatrix;
     genMatrix.resize(6, numberOfFrictionSides*4); // 4 is fixed because we assume rectangular contacts (4 individual contact points)
     Eigen::Index col(0);
 
-    for (auto contactPoint : contacts) {
+    // mc_rtc::log::info("generating cones for a contact point");
+    auto generators = generateCone(numberOfFrictionSides, contactSurface.second.rotation(), m_frictionCoef);
+    // contactPoint first is the pair of xHalfLength and yHalfLength of the rectangular contact
+    std::vector<Eigen::Vector3d> points;
+    points.emplace_back(contactSurface.first.first, contactSurface.first.second, 0);
+    points.emplace_back(contactSurface.first.first, -contactSurface.first.second, 0);
+    points.emplace_back(-contactSurface.first.first, -contactSurface.first.second, 0);
+    points.emplace_back(-contactSurface.first.first, contactSurface.first.second, 0);
+    // mc_rtc::log::info("computing matrix using cone generators:");
+    for (auto p : points) {
+        // XXX r is the extremity point of the surface : center + offset using half dimensions (-application point in world to get desired frame)
+        Eigen::Vector3d r = contactSurface.second.translation() + p - applicationPoint;
+        // mc_rtc::log::info("point half dim offset is {}, contact point associated is {}", p.transpose(), r.transpose());
+        for (auto g : generators) {
+            // here we stack the matrix using the "limits" of the surface contact (points r) and associate each generator found for the contact
+            // this is the angular part of the 6d vector (resulting moment of the force generator at application point)
+            genMatrix.col(col).segment<3>(0).noalias() = skewMatrix(r) * g;
+            // this is the translational part
+            genMatrix.col(col).segment<3>(3) = g;
+            // mc_rtc::log::info("applying generator to contact point : 6d vect is {}", genMatrix.col(col).transpose());
+            col += 1;
+        }
+    }
+    return genMatrix;
+}
+
+
+Eigen::MatrixXd computeGeneratorsMatrixRaysCones(Eigen::Vector3d applicationPoint, int numberOfFrictionSides, std::vector<std::pair<std::pair<double, double>, sva::PTransformd>> contactSurfaces, double m_frictionCoef)
+{
+    Eigen::MatrixXd genMatrix;
+    genMatrix.resize(6, numberOfFrictionSides*4); // 4 is fixed because we assume rectangular contacts (4 individual contact points)
+    Eigen::Index col(0);
+
+    for (auto contactSurface : contactSurfaces) {
         // mc_rtc::log::info("generating cones for a contact point");
-        auto generators = generateCone(numberOfFrictionSides, contactPoint.second.rotation(), m_frictionCoef);
+        auto generators = generateCone(numberOfFrictionSides, contactSurface.second.rotation(), m_frictionCoef);
         // contactPoint first is the pair of xHalfLength and yHalfLength of the rectangular contact
         std::vector<Eigen::Vector3d> points;
-        points.emplace_back(contactPoint.first.first, contactPoint.first.second, 0);
-        points.emplace_back(contactPoint.first.first, -contactPoint.first.second, 0);
-        points.emplace_back(-contactPoint.first.first, -contactPoint.first.second, 0);
-        points.emplace_back(-contactPoint.first.first, contactPoint.first.second, 0);
+        points.emplace_back(contactSurface.first.first, contactSurface.first.second, 0);
+        points.emplace_back(contactSurface.first.first, -contactSurface.first.second, 0);
+        points.emplace_back(-contactSurface.first.first, -contactSurface.first.second, 0);
+        points.emplace_back(-contactSurface.first.first, contactSurface.first.second, 0);
         // mc_rtc::log::info("computing matrix using cone generators:");
         for (auto p : points) {
             // XXX r is the extremity point of the surface : center + offset using half dimensions (-application point in world to get desired frame)
-            Eigen::Vector3d r = contactPoint.second.translation() + p - applicationPoint;
+            Eigen::Vector3d r = contactSurface.second.translation() + p - applicationPoint;
             // mc_rtc::log::info("point half dim offset is {}, contact point associated is {}", p.transpose(), r.transpose());
             for (auto g : generators) {
                 // here we stack the matrix using the "limits" of the surface contact (points r) and associate each generator found for the contact
