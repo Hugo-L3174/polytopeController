@@ -12,8 +12,8 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
   wallPose_ = robot("wall").posW();
   wallPose_.translation() += Eigen::Vector3d(-0.05, 0.4, 1.1);
   gui()->addElement({"Wall"}, mc_rtc::gui::Transform(
-                                 "centre", [this]() -> const sva::PTransformd & { return wallPose_; },
-                                 [this](const sva::PTransformd & p) { wallPose_ = p; })
+                                  "centre", [this]() -> const sva::PTransformd & { return wallPose_; },
+                                  [this](const sva::PTransformd & p) { wallPose_ = p; })
 
   );
 
@@ -36,7 +36,6 @@ bool PolytopeController::run()
     robotPolytope_->update(contactSet_, currentPos);
   }
   firstPolyOK_ = robotPolytope_->computed();
-
 
   /* We update the objective only if the first polytope at least was computed
   Then it is updated every control iteration using the last computed polytope
@@ -66,14 +65,14 @@ void PolytopeController::updateContactSet(const std::vector<mc_rbdyn::Contact> &
 {
   const auto & robot = robots().robot(robotIndex);
   mc_rtc::Configuration maxForces;
-  if (config_.has("surfacesMaxForces"))
+  if(config_.has("surfacesMaxForces"))
   {
     maxForces = config_("surfacesMaxForces");
   }
 
   // XXX can we avoid allocating a new contact set every time?
   contactSet_ = std::make_shared<ContactSet>(false);
- 
+
   contactSet_->mass(robots().robot(robotIndex).mass());
   contactSet_->setFrictionSides(6);
 
@@ -156,10 +155,9 @@ void PolytopeController::updateContactSet(const std::vector<mc_rbdyn::Contact> &
   contactSet_->addCoMAcc(acceleration);
 }
 
-
 void PolytopeController::updateObjective(MCStabilityPolytope * polytope_,
-                                       Eigen::Vector3d currentPos,
-                                       Eigen::Vector3d & objective)
+                                         Eigen::Vector3d currentPos,
+                                         Eigen::Vector3d & objective)
 {
   double filterCoeff = 0.7;
   auto planes = polytope_->constraintPlanes();
@@ -189,5 +187,4 @@ void PolytopeController::updateObjective(MCStabilityPolytope * polytope_,
   {
     objective.z() = currentPos.z();
   }
-
 }

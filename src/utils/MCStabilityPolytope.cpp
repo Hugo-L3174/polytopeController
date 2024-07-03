@@ -90,11 +90,11 @@ void MCStabilityPolytope::addToGUI(mc_rtc::gui::StateBuilder & gui, std::vector<
   };
 
   gui.addElement(this, category,
-                 mc_rtc::gui::Polyhedron(fmt::format("{} balance region", name_), polyOKConfig_, [this]() { return
-                 triangles(); }));
-                //  mc_rtc::gui::ColoredPolyhedron(
-                //      fmt::format("{} balance region", name_), polyOKConfig_, [this]() { return triangles(); },
-                //      polyhedron_colors_fn));
+                 mc_rtc::gui::Polyhedron(fmt::format("{} balance region", name_), polyOKConfig_,
+                                         [this]() { return triangles(); }));
+  //  mc_rtc::gui::ColoredPolyhedron(
+  //      fmt::format("{} balance region", name_), polyOKConfig_, [this]() { return triangles(); },
+  //      polyhedron_colors_fn));
 
   // XXX This change of config works but rviz does not update display correctly unless reset.
   // When this bug is fixed, this implem will be better than the coloredPoly

@@ -2,9 +2,7 @@
 
 #include "../PolytopeController.h"
 
-void PolytopeController_Initial::configure(const mc_rtc::Configuration & config)
-{
-}
+void PolytopeController_Initial::configure(const mc_rtc::Configuration & config) {}
 
 void PolytopeController_Initial::start(mc_control::fsm::Controller & ctl_)
 {

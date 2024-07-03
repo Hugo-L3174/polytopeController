@@ -21,4 +21,3 @@ add_subdirectory(src)
 set(AROBASE "@")
 configure_file(etc/PolytopeController.in.yaml "${CMAKE_CURRENT_BINARY_DIR}/etc/PolytopeController.yaml")
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/etc/PolytopeController.yaml" DESTINATION "${MC_CONTROLLER_RUNTIME_INSTALL_PREFIX}/etc")
-

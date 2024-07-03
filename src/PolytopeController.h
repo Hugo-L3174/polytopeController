@@ -1,7 +1,7 @@
 #pragma once
 
-#include <mc_control/mc_controller.h>
 #include <mc_control/fsm/Controller.h>
+#include <mc_control/mc_controller.h>
 
 #include "utils/MCStabilityPolytope.h"
 
@@ -19,10 +19,8 @@ struct PolytopeController_DLLAPI PolytopeController : public mc_control::fsm::Co
   void updateObjective(MCStabilityPolytope * polytope_, Eigen::Vector3d currentPos, Eigen::Vector3d & objective);
 
 private:
-
   sva::PTransformd wallPose_;
   std::shared_ptr<MCStabilityPolytope> robotPolytope_;
   std::shared_ptr<ContactSet> contactSet_;
   bool firstPolyOK_ = false;
-
 };
