@@ -3,6 +3,7 @@
 #include <mc_control/fsm/Controller.h>
 #include <mc_control/mc_controller.h>
 
+#include "utils/DynamicPolytope.h"
 #include "utils/MCStabilityPolytope.h"
 
 #include "api.h"
@@ -23,4 +24,6 @@ private:
   std::shared_ptr<MCStabilityPolytope> robotPolytope_;
   std::shared_ptr<ContactSet> contactSet_;
   bool firstPolyOK_ = false;
+
+  std::shared_ptr<DynamicPolytope> forcePoly_;
 };

@@ -94,3 +94,9 @@ StabilityPolytope:
     polyhedronNOK:
       <<: *polyhedron
       triangle_color: [0.0, 0.0, 1.0, 0.3]
+  rhps1:
+    polyhedronOK:
+      <<: *polyhedron
+    polyhedronNOK:
+      <<: *polyhedron
+      triangle_color: [0.0, 0.0, 1.0, 0.3]

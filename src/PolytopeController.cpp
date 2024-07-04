@@ -4,10 +4,13 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
 : mc_control::fsm::Controller(rm, dt, config)
 {
   // initialize polytope object
-  robotPolytope_ = std::make_shared<MCStabilityPolytope>(robot().name());
-  robotPolytope_->load(config("StabilityPolytope")(robot().name()));
-  robotPolytope_->addToLogger(logger());
-  robotPolytope_->addToGUI(*gui());
+  // robotPolytope_ = std::make_shared<MCStabilityPolytope>(robot().name());
+  // robotPolytope_->load(config("StabilityPolytope")(robot().name()));
+  // robotPolytope_->addToLogger(logger());
+  // robotPolytope_->addToGUI(*gui());
+  forcePoly_ = std::make_shared<DynamicPolytope>(robot().name());
+  forcePoly_->load(config("StabilityPolytope")(robot().name()));
+  forcePoly_->addToGUI(*gui());
 
   wallPose_ = robot("wall").posW();
   wallPose_.translation() += Eigen::Vector3d(-0.05, 0.4, 1.1);
@@ -28,14 +31,22 @@ bool PolytopeController::run()
   robot("wall").posW(pos);
 
   auto contacts = solver().contacts();
-  updateContactSet(contacts, robot().robotIndex());
+
+  forcePoly_->resetContactSet();
+  mc_tasks::lipm_stabilizer::internal::Contact newContact(robot(), "LeftFootCenter", 0.7);
+  std::pair<std::pair<double, double>, sva::PTransformd> cont(
+      std::pair<double, double>(newContact.halfLength(), newContact.halfWidth()), newContact.surfacePose());
+  boost::shared_ptr<Polytope_Rn> cone(new Polytope_Rn(forcePoly_->buildForceConeFromContact(6, cont, 0.7)));
+  forcePoly_->updateTriangles(cone, forcePoly_->polytopeTriangles_);
+
+  // updateContactSet(contacts, robot().robotIndex());
   Eigen::Vector3d currentPos = robot().com();
-  if(contactSet_->numberOfContacts() > 0)
+  // if(contactSet_->numberOfContacts() > 0)
   {
     // XXX check if current pos is useful (not used)
-    robotPolytope_->update(contactSet_, currentPos);
+    // robotPolytope_->update(contactSet_, currentPos);
   }
-  firstPolyOK_ = robotPolytope_->computed();
+  // firstPolyOK_ = robotPolytope_->computed();
 
   /* We update the objective only if the first polytope at least was computed
   Then it is updated every control iteration using the last computed polytope
