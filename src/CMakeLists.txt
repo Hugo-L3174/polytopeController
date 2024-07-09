@@ -27,6 +27,7 @@ target_link_libraries(${PROJECT_NAME}
   Stabiliplus::StabilityPolytope
   sch-core::sch-core
   polito
+  eigen-cdd::eigen-cdd
   )
 install(TARGETS ${PROJECT_NAME}
   ARCHIVE DESTINATION "${MC_RTC_LIBDIR}"

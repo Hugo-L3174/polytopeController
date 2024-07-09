@@ -39,10 +39,10 @@ Polytope_Rn DynamicPolytope::buildForceConeFromContact(
     coords.insert_element(2, g.z());
     gn->setCoordinates(coords);
     new3dForceCone.addGenerator(gn);
-    mc_rtc::log::info("Creating cone with vertex {}", g.transpose());
+    // mc_rtc::log::info("Creating cone with vertex {}", g.transpose());
   }
-  mc_rtc::log::info("Created cone of dim {} with {} generators", new3dForceCone.dimension(),
-                    new3dForceCone.numberOfGenerators());
+  // mc_rtc::log::info("Created cone of dim {} with {} generators", new3dForceCone.dimension(),
+  //                   new3dForceCone.numberOfGenerators());
   return new3dForceCone;
 }
 
@@ -74,8 +74,8 @@ void DynamicPolytope::computeResultHull()
   // QuickHullAlgorithm convexHull(CWC_);
 }
 
-void DynamicPolytope::updateTriangles(const boost::shared_ptr<Polytope_Rn> & polytope,
-                                      std::vector<std::array<Eigen::Vector3d, 3>> & resultTriangles)
+void DynamicPolytope::updateTrianglesPolitopix(boost::shared_ptr<Polytope_Rn> & polytope,
+                                               std::vector<std::array<Eigen::Vector3d, 3>> & resultTriangles)
 {
   // XXX mutex?
   // XXX CAREFUL here we fill a triangles list: this assumes we are in 3d (because each facet has dim vertices in a
@@ -93,6 +93,13 @@ void DynamicPolytope::updateTriangles(const boost::shared_ptr<Polytope_Rn> & pol
   // For each half space in the polytope, get the generators that compose it
   constIteratorOfListOfGeometricObjects<boost::shared_ptr<HalfSpace_Rn>> halfSpaceIter(polytope->getListOfHalfSpaces());
   constIteratorOfListOfGeometricObjects<boost::shared_ptr<Generator_Rn>> generatorIter(polytope->getListOfGenerators());
+
+  // get a point that we know is inside the polytope to compute the faces normals
+  boost::numeric::ublas::vector<double> insidePoint(3);
+  TopGeomTools::gravityCenter(polytope, insidePoint);
+  // recast it in eigen for practical reasons
+  Eigen::Vector3d inside(insidePoint[0], insidePoint[1], insidePoint[2]);
+
   for(halfSpaceIter.begin(); halfSpaceIter.end() != true; halfSpaceIter.next())
   {
     mc_rtc::log::info("Face index is {}", halfSpaceIter.currentIteratorNumber());
@@ -117,13 +124,16 @@ void DynamicPolytope::updateTriangles(const boost::shared_ptr<Polytope_Rn> & pol
       }
     }
     // we got all vertices of the face in vertices vector, now order them for triangle array, ie order vertices so that
-    // normal faces exterior
-    // XXX check that this is the normal and not - the normal
+    // the normal is towards the exterior
     Eigen::Vector3d faceNormal;
-    faceNormal = (vertices.at(2) - vertices.at(0)).cross(vertices.at(1) - vertices.at(0));
+    faceNormal = (vertices.at(1) - vertices.at(0)).cross(vertices.at(2) - vertices.at(0));
     faceNormal.normalize();
 
-    if(((vertices.at(1) - vertices.at(0)).cross(vertices.at(2) - vertices.at(0))).dot(faceNormal) > 0.0)
+    auto faceOffset = halfSpaceIter.current()->getConstant();
+
+    // testing for normal direction: if inside point of the face * normal - face offset > 0 then we need to invert the
+    // face
+    if(inside.dot(faceNormal) - faceOffset < 0.0)
     {
       resultTriangles.push_back({vertices.at(0), vertices.at(1), vertices.at(2)});
     }

@@ -63,8 +63,8 @@ init: PolytopeController_Initial
 
 StabilityPolytope:
   hrp4:
-    polyhedronOK: &polyhedron
-      triangle_color: [1.0, 0.0, 0.0, 0.3]
+    polyhedronForce: &polyhedron
+      triangle_color: [1.0, 0.0, 0.0, 0.4]
       show_triangle: true
       use_triangle_color: false
       edges:
@@ -78,25 +78,25 @@ StabilityPolytope:
         scale: 0.02
       show_vertices: false
       fixed_vertices_color: true
-    polyhedronNOK:
+    polyhedronMoment:
       <<: *polyhedron
-      triangle_color: [0.0, 0.0, 1.0, 0.3]
+      triangle_color: [0.0, 0.0, 1.0, 0.4]
   human:
-    polyhedronOK:
+    polyhedronForce:
       <<: *polyhedron
       triangle_color: [0.0, 1.0, 0.0, 0.4]
-    polyhedronNOK:
+    polyhedronMoment:
       <<: *polyhedron
       triangle_color: [1.0, 0.0, 0.0, 0.4]
   e2dr:
-    polyhedronOK:
+    polyhedronForce:
       <<: *polyhedron
-    polyhedronNOK:
+    polyhedronMoment:
       <<: *polyhedron
       triangle_color: [0.0, 0.0, 1.0, 0.3]
   rhps1:
-    polyhedronOK:
+    polyhedronForce:
       <<: *polyhedron
-    polyhedronNOK:
+    polyhedronMoment:
       <<: *polyhedron
-      triangle_color: [0.0, 0.0, 1.0, 0.3]
+      triangle_color: [0.0, 0.0, 1.0, 0.4]

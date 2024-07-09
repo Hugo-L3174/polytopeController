@@ -47,7 +47,8 @@ std::vector<Eigen::Vector3d> generateCone(int numberOfFrictionSides, Eigen::Matr
     generators[i] = m_rotation.transpose() * Eigen::AngleAxisd(step * i, normal) * gen;
     // mc_rtc::log::info("generator {} of this cone is {}", i, generators[i].transpose());
   }
-
+  // XXX cheating by adding the origin as a generator: this is a vertex, not a ray and thus not a polyhedral cone
+  generators.emplace_back(Eigen::Vector3d::Zero());
   return generators;
 }
 
@@ -139,6 +140,11 @@ Eigen::MatrixXd computeGeneratorsMatrixRaysCones(
 Eigen::Matrix3d skewMatrix(const Eigen::Vector3d v)
 {
   Eigen::Matrix3d mat;
-  mat << 0., -v(2), v(1), v(2), 0., -v(0), -v(1), v(0), 0.;
+  mat <<
+      // clang-format off
+        0.,  -v(2), v(1),
+        v(2),   0.,-v(0),
+       -v(1), v(0),   0.;
+  // clang-format on
   return mat;
 }

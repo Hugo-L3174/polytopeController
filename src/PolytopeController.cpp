@@ -3,7 +3,7 @@
 PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, const mc_rtc::Configuration & config)
 : mc_control::fsm::Controller(rm, dt, config)
 {
-  // initialize polytope object
+  // initialize stabiliplus polytope object
   // robotPolytope_ = std::make_shared<MCStabilityPolytope>(robot().name());
   // robotPolytope_->load(config("StabilityPolytope")(robot().name()));
   // robotPolytope_->addToLogger(logger());
@@ -32,37 +32,18 @@ bool PolytopeController::run()
 
   auto contacts = solver().contacts();
 
+  // politopix calculations
   forcePoly_->resetContactSet();
+  // careful when doing stabilizer contacts: name has to be the centered one to have symetrical half lengths
   mc_tasks::lipm_stabilizer::internal::Contact newContact(robot(), "LeftFootCenter", 0.7);
   std::pair<std::pair<double, double>, sva::PTransformd> cont(
       std::pair<double, double>(newContact.halfLength(), newContact.halfWidth()), newContact.surfacePose());
   boost::shared_ptr<Polytope_Rn> cone(new Polytope_Rn(forcePoly_->buildForceConeFromContact(6, cont, 0.7)));
-  forcePoly_->updateTriangles(cone, forcePoly_->polytopeTriangles_);
+  DoubleDescriptionFromGenerators::Compute(cone, 10);
+  forcePoly_->updateTrianglesPolitopix(cone, forcePoly_->polytopeTriangles_);
 
-  // updateContactSet(contacts, robot().robotIndex());
-  Eigen::Vector3d currentPos = robot().com();
-  // if(contactSet_->numberOfContacts() > 0)
-  {
-    // XXX check if current pos is useful (not used)
-    // robotPolytope_->update(contactSet_, currentPos);
-  }
-  // firstPolyOK_ = robotPolytope_->computed();
-
-  /* We update the objective only if the first polytope at least was computed
-  Then it is updated every control iteration using the last computed polytope
-  */
-  if(firstPolyOK_)
-  {
-    // XXX this causes drift as the com follows the measured value (in choreonoid)
-    // measuredDCM_ = robot().com();
-    // updateObjective(robotPolytope_.get(), measuredDCM_, DCMobjective_);
-  }
-  else
-  {
-    // This is to initialize the low pass near the com and not at zero (which makes the com objective move violently in
-    // the beginning otherwise) combined to chebichev coeff and cutoff period of lowpass
-    // lowPassPolyCenter_.reset(robot().com());
-  }
+  // cdd calculations
+  // TODO
 
   return mc_control::fsm::Controller::run();
 }

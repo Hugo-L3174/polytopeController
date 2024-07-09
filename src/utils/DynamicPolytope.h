@@ -16,7 +16,8 @@
 #include "../../../politopix/trunk/PolyhedralAlgorithms_Rn.h"
 #include "../../../politopix/trunk/PrismaticPolyhedron_Rn.h"
 #include "../../../politopix/trunk/politopixAPI.h"
-// #include "../../../politopix/trunk/ConvexHull_Rn.h"
+
+#include <eigen-cdd/Polyhedron.h>
 
 struct DynamicPolytope
 {
@@ -44,8 +45,8 @@ struct DynamicPolytope
   void computeResultHull();
 
   // Updates the faces vector used for polytope display
-  void updateTriangles(const boost::shared_ptr<Polytope_Rn> & polytope,
-                       std::vector<std::array<Eigen::Vector3d, 3>> & resultTriangles);
+  void updateTrianglesPolitopix(boost::shared_ptr<Polytope_Rn> & polytope,
+                                std::vector<std::array<Eigen::Vector3d, 3>> & resultTriangles);
 
   void resetContactSet()
   {
@@ -67,8 +68,13 @@ protected:
   string name_;
   mc_rtc::gui::PolyhedronConfig polyForceConfig_;
   mc_rtc::gui::PolyhedronConfig polyMomentConfig_;
+
+  // politopix
   std::vector<boost::shared_ptr<Polytope_Rn>> frictionCones_;
   boost::shared_ptr<Polytope_Rn> CWC_;
+
+  // cdd
+  std::vector<std::shared_ptr<Eigen::Polyhedron>> cddFrictionCones_;
 
 public:
   std::vector<std::array<Eigen::Vector3d, 3>> polytopeTriangles_;
