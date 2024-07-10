@@ -28,7 +28,9 @@ Eigen::MatrixXd linearizedFrictionCone(int numberOfFrictionSides, Eigen::Matrix3
   return F;
 }
 
-std::vector<Eigen::Vector3d> generateCone(int numberOfFrictionSides, Eigen::Matrix3d m_rotation, double m_frictionCoef)
+std::vector<Eigen::Vector3d> generatePolyhedralConeGens(int numberOfFrictionSides,
+                                                        Eigen::Matrix3d m_rotation,
+                                                        double m_frictionCoef)
 {
   std::vector<Eigen::Vector3d> generators(numberOfFrictionSides);
   // here unit vector, but can be capped for cone?
@@ -47,16 +49,14 @@ std::vector<Eigen::Vector3d> generateCone(int numberOfFrictionSides, Eigen::Matr
     generators[i] = m_rotation.transpose() * Eigen::AngleAxisd(step * i, normal) * gen;
     // mc_rtc::log::info("generator {} of this cone is {}", i, generators[i].transpose());
   }
-  // XXX cheating by adding the origin as a generator: this is a vertex, not a ray and thus not a polyhedral cone
-  generators.emplace_back(Eigen::Vector3d::Zero());
   return generators;
 }
 
-// application point is around what the generators must be applied
-Eigen::MatrixXd computeGeneratorsMatrixSingleCone(Eigen::Vector3d applicationPoint,
-                                                  int numberOfFrictionSides,
-                                                  std::pair<std::pair<double, double>, sva::PTransformd> contactSurface,
-                                                  double m_frictionCoef)
+Eigen::MatrixXd compute6DGeneratorsMatrixSingleCone(
+    Eigen::Vector3d applicationPoint,
+    int numberOfFrictionSides,
+    std::pair<std::pair<double, double>, sva::PTransformd> contactSurface,
+    double m_frictionCoef)
 {
   Eigen::MatrixXd genMatrix;
   genMatrix.resize(6, numberOfFrictionSides
@@ -64,7 +64,7 @@ Eigen::MatrixXd computeGeneratorsMatrixSingleCone(Eigen::Vector3d applicationPoi
   Eigen::Index col(0);
 
   // mc_rtc::log::info("generating cones for a contact point");
-  auto generators = generateCone(numberOfFrictionSides, contactSurface.second.rotation(), m_frictionCoef);
+  auto generators = generatePolyhedralConeGens(numberOfFrictionSides, contactSurface.second.rotation(), m_frictionCoef);
   // contactPoint first is the pair of xHalfLength and yHalfLength of the rectangular contact
   std::vector<Eigen::Vector3d> points;
   points.emplace_back(contactSurface.first.first, contactSurface.first.second, 0);
@@ -93,7 +93,7 @@ Eigen::MatrixXd computeGeneratorsMatrixSingleCone(Eigen::Vector3d applicationPoi
   return genMatrix;
 }
 
-Eigen::MatrixXd computeGeneratorsMatrixRaysCones(
+Eigen::MatrixXd compute6DGeneratorsMatrixRaysCones(
     Eigen::Vector3d applicationPoint,
     int numberOfFrictionSides,
     std::vector<std::pair<std::pair<double, double>, sva::PTransformd>> contactSurfaces,
@@ -107,7 +107,8 @@ Eigen::MatrixXd computeGeneratorsMatrixRaysCones(
   for(auto contactSurface : contactSurfaces)
   {
     // mc_rtc::log::info("generating cones for a contact point");
-    auto generators = generateCone(numberOfFrictionSides, contactSurface.second.rotation(), m_frictionCoef);
+    auto generators =
+        generatePolyhedralConeGens(numberOfFrictionSides, contactSurface.second.rotation(), m_frictionCoef);
     // contactPoint first is the pair of xHalfLength and yHalfLength of the rectangular contact
     std::vector<Eigen::Vector3d> points;
     points.emplace_back(contactSurface.first.first, contactSurface.first.second, 0);

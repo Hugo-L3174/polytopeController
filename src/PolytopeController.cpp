@@ -8,7 +8,8 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
   // robotPolytope_->load(config("StabilityPolytope")(robot().name()));
   // robotPolytope_->addToLogger(logger());
   // robotPolytope_->addToGUI(*gui());
-  forcePoly_ = std::make_shared<DynamicPolytope>(robot().name());
+  std::set<std::string> contactNames = {"LeftFootCenter", "RightFootCenter", "LeftHand", "RightHand"};
+  forcePoly_ = std::make_shared<DynamicPolytope>(robot().name(), contactNames);
   forcePoly_->load(config("StabilityPolytope")(robot().name()));
   forcePoly_->addToGUI(*gui());
 
@@ -28,19 +29,22 @@ bool PolytopeController::run()
   // move wall around using gui pointer
   sva::PTransformd pos = wallPose_;
   pos.translation() -= Eigen::Vector3d(-0.05, 0.4, 1.1);
-  robot("wall").posW(pos);
+  // XXX updating posW does not seem to update the contact constraints?
+  // robot("wall").posW(pos);
 
+  // get list of the current contact names
   auto contacts = solver().contacts();
+  std::vector<std::string> contactNames;
+  for(auto contact : contacts)
+  {
+    contactNames.emplace_back(contact.r1Surface()->name());
+  }
+  forcePoly_->setCurrentContacts(contactNames);
 
-  // politopix calculations
-  forcePoly_->resetContactSet();
+  //----------------- politopix calculations
   // careful when doing stabilizer contacts: name has to be the centered one to have symetrical half lengths
-  mc_tasks::lipm_stabilizer::internal::Contact newContact(robot(), "LeftFootCenter", 0.7);
-  std::pair<std::pair<double, double>, sva::PTransformd> cont(
-      std::pair<double, double>(newContact.halfLength(), newContact.halfWidth()), newContact.surfacePose());
-  boost::shared_ptr<Polytope_Rn> cone(new Polytope_Rn(forcePoly_->buildForceConeFromContact(6, cont, 0.7)));
-  DoubleDescriptionFromGenerators::Compute(cone, 10);
-  forcePoly_->updateTrianglesPolitopix(cone, forcePoly_->polytopeTriangles_);
+  forcePoly_->computeConesFromContactSet(robot());
+  forcePoly_->updateTrianglesGUIPolitopix();
 
   // cdd calculations
   // TODO

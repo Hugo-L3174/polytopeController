@@ -1,9 +1,19 @@
 #include "DynamicPolytope.h"
 
-DynamicPolytope::DynamicPolytope(const std::string & name) : name_(name)
+DynamicPolytope::DynamicPolytope(const std::string & name, std::set<std::string> contactNames)
+: name_(name), possibleContacts_(contactNames)
 {
-  // Init GIWC pointer
+  // Init dimension
   Rn::setDimension(3);
+  // init triangles and cones maps
+  for(const auto contact : contactNames)
+  {
+    std::vector<std::array<Eigen::Vector3d, 3UL>> newTrianglesArray;
+    polytopeTrianglesMap_.emplace(contact, newTrianglesArray);
+
+    boost::shared_ptr<Polytope_Rn> newCone(new Polytope_Rn());
+    frictionCones_.emplace(contact, newCone);
+  }
 }
 
 DynamicPolytope::~DynamicPolytope() {}
@@ -22,15 +32,17 @@ void DynamicPolytope::load(const mc_rtc::Configuration & config)
 
 Polytope_Rn DynamicPolytope::buildForceConeFromContact(
     int numberOfFrictionSides,
-    std::pair<std::pair<double, double>, sva::PTransformd> contactSurface,
+    std::pair<std::pair<double, double>, sva::PTransformd> & contactSurface,
     double m_frictionCoef)
 {
   double dim = 3;
   Polytope_Rn new3dForceCone;
   // newCone
-
-  auto generators = generateCone(numberOfFrictionSides, contactSurface.second.rotation(), m_frictionCoef);
-  for(auto g : generators)
+  // for now generate cone generates only the directions for the rays: we assume it is a polyhedral cone
+  auto generators = generatePolyhedralConeGens(numberOfFrictionSides, contactSurface.second.rotation(), m_frictionCoef);
+  // here we manipulate polytope objects so need to add origin as a generator on the polyhedral cone
+  generators.emplace_back(Eigen::Vector3d::Zero());
+  for(const auto g : generators)
   {
     boost::shared_ptr<Generator_Rn> gn(new Generator_Rn(dim));
     boost::numeric::ublas::vector<double> coords(3);
@@ -58,7 +70,7 @@ void DynamicPolytope::addContactWrenchCone(const mc_rbdyn::Robot & robot,
   // bounded polytopes
   auto com = robot.com();
   // compute 6d generators matrix for 6d cone of this contact (6d vectors are columns)
-  Eigen::MatrixXd gen = computeGeneratorsMatrixSingleCone(com, 6, contactSurface, 0.7);
+  Eigen::MatrixXd gen = compute6DGeneratorsMatrixSingleCone(com, 6, contactSurface, 0.7);
   // build polytope object from these generators
   boost::shared_ptr<Polytope_Rn> newPoly(new Polytope_Rn());
   // for(size_t i = 0; i < count; i++)
@@ -68,10 +80,37 @@ void DynamicPolytope::addContactWrenchCone(const mc_rbdyn::Robot & robot,
   // }
 }
 
-void DynamicPolytope::computeResultHull()
+void DynamicPolytope::computeConesFromContactSet(const mc_rbdyn::Robot & robot)
 {
-  // instanciation runs the whole algorithm
-  // QuickHullAlgorithm convexHull(CWC_);
+  for(const auto contactName : activeContacts_)
+  {
+    mc_tasks::lipm_stabilizer::internal::Contact newContact(robot, contactName, 0.7);
+    std::pair<std::pair<double, double>, sva::PTransformd> cont(
+        std::pair<double, double>(newContact.halfLength(), newContact.halfWidth()), newContact.surfacePose());
+
+    // update the correct cone in the map
+    frictionCones_.at(contactName).reset(new Polytope_Rn(buildForceConeFromContact(6, cont, newContact.friction())));
+    // update faces of the cone
+    DoubleDescriptionFromGenerators::Compute(frictionCones_.at(contactName), 10);
+  }
+}
+
+// void DynamicPolytope::computeResultHull()
+// {
+//   // instanciation runs the whole algorithm
+//   // QuickHullAlgorithm convexHull(CWC_);
+// }
+
+void DynamicPolytope::updateTrianglesGUIPolitopix()
+{
+  for(const auto contact : activeContacts_)
+  {
+    updateTrianglesPolitopix(frictionCones_.at(contact), polytopeTrianglesMap_.at(contact));
+  }
+  for(const auto contact : contactsToRemove_)
+  {
+    clearTriangles(polytopeTrianglesMap_.at(contact));
+  }
 }
 
 void DynamicPolytope::updateTrianglesPolitopix(boost::shared_ptr<Polytope_Rn> & polytope,
@@ -82,10 +121,9 @@ void DynamicPolytope::updateTrianglesPolitopix(boost::shared_ptr<Polytope_Rn> & 
   // polytope) BUT this means if we actually manipulate a 6d space the faces will be hexagons? can we assume the
   // generators are made of 2 3d matrices?
   resultTriangles.clear();
-  // DoubleDescriptionFromGenerators::Compute(polytope);
   // Assuming the given polytope is already computed, get the generators for each facet, then use their coordinates to
-  // create the faces in mc_rtc format This fills the list with vectors of the ids of the generators that compose each
-  // face
+  // create the faces in mc_rtc format.
+  // This fills the list with vectors of the ids of the generators that compose each face
   std::vector<std::vector<unsigned int>> listOfGeneratorsPerFacet;
   polytope->getGeneratorsPerFacet(listOfGeneratorsPerFacet);
 
@@ -102,7 +140,7 @@ void DynamicPolytope::updateTrianglesPolitopix(boost::shared_ptr<Polytope_Rn> & 
 
   for(halfSpaceIter.begin(); halfSpaceIter.end() != true; halfSpaceIter.next())
   {
-    mc_rtc::log::info("Face index is {}", halfSpaceIter.currentIteratorNumber());
+    // mc_rtc::log::info("Face index is {}", halfSpaceIter.currentIteratorNumber());
     std::vector<Eigen::Vector3d> vertices;
     for(generatorIter.begin(); generatorIter.end() != true; generatorIter.next())
     {
@@ -112,14 +150,14 @@ void DynamicPolytope::updateTrianglesPolitopix(boost::shared_ptr<Polytope_Rn> & 
       {
         if(generatorIter.current()->getFacet(i) == halfSpaceIter.current())
         {
-          mc_rtc::log::info("This generator belongs to the current face, adding it.");
+          // mc_rtc::log::info("This generator belongs to the current face, adding it.");
           // This generator is one of the current halfspace vertex
           // XXX here the index of the coordinate depends if we say 3d force polytope or directly 6d wrench polytope
 
           Eigen::Vector3d vertex(generatorIter.current()->getCoordinate(0), generatorIter.current()->getCoordinate(1),
                                  generatorIter.current()->getCoordinate(2));
           vertices.push_back(vertex);
-          mc_rtc::log::info("Vertex coords: {}", vertex.transpose());
+          // mc_rtc::log::info("Vertex coords: {}", vertex.transpose());
         }
       }
     }
@@ -146,9 +184,26 @@ void DynamicPolytope::updateTrianglesPolitopix(boost::shared_ptr<Polytope_Rn> & 
 
 void DynamicPolytope::addToGUI(mc_rtc::gui::StateBuilder & gui, std::vector<std::string> category)
 {
-  category.push_back("Polyhedrons");
+  category.push_back(name_);
+  auto conesCat = category;
+  conesCat.push_back("Friction cones");
 
-  gui.addElement(this, category,
-                 mc_rtc::gui::Polyhedron(fmt::format("{} balance region", name_), polyForceConfig_,
-                                         [this]() { return getPolyTriangles(); }));
+  for(const auto contact : possibleContacts_)
+  {
+    gui.addElement(
+        this, conesCat,
+        mc_rtc::gui::Polyhedron(contact, polyForceConfig_, [this, contact]() { return getPolyTriangles(contact); }));
+  }
+
+  // gui.addElement(this, conesCat,
+  //                 // mc_rtc::gui::Polyhedron(fmt::format("{} balance region", name_), polyForceConfig_,
+  //                 //                        [this]() { return getPolyTriangles("LeftFootCenter"); }),
+  //                 mc_rtc::gui::Polyhedron(fmt::format("{} cone", name_), polyForceConfig_,
+  //                                        [this]() { return getPolyTriangles("RightFootCenter"); }),
+  //                 mc_rtc::gui::Polyhedron("LeftFoot Cone", polyForceConfig_,
+  //                                        [this]() { return getPolyTriangles("LeftFootCenter"); }),
+  //                 mc_rtc::gui::Polyhedron("RightHand Cone", polyForceConfig_,
+  //                                        [this]() { return getPolyTriangles("RightHand"); }),
+  //                 mc_rtc::gui::Polyhedron("LeftHand Cone", polyForceConfig_,
+  //                                        [this]() { return getPolyTriangles("LeftHand"); }));
 }
