@@ -91,7 +91,10 @@ void DynamicPolytope::computeConesFromContactSet(const mc_rbdyn::Robot & robot)
     // update the correct cone in the map
     frictionCones_.at(contactName).reset(new Polytope_Rn(buildForceConeFromContact(6, cont, newContact.friction())));
     // update faces of the cone
-    DoubleDescriptionFromGenerators::Compute(frictionCones_.at(contactName), 10);
+    DoubleDescriptionFromGenerators::Compute(frictionCones_.at(contactName), 100);
+    // mc_rtc::log::info("Cone for {} has {} generators and {} facets", contactName,
+    //                   frictionCones_.at(contactName)->numberOfGenerators(),
+    //                   frictionCones_.at(contactName)->numberOfHalfSpaces());
   }
 }
 
@@ -123,9 +126,10 @@ void DynamicPolytope::updateTrianglesPolitopix(boost::shared_ptr<Polytope_Rn> & 
   resultTriangles.clear();
   // Assuming the given polytope is already computed, get the generators for each facet, then use their coordinates to
   // create the faces in mc_rtc format.
-  // This fills the list with vectors of the ids of the generators that compose each face
-  std::vector<std::vector<unsigned int>> listOfGeneratorsPerFacet;
-  polytope->getGeneratorsPerFacet(listOfGeneratorsPerFacet);
+
+  // This fills the list with vectors of the ids of the generators that compose each face (Never used)
+  // std::vector<std::vector<unsigned int>> listOfGeneratorsPerFacet;
+  // polytope->getGeneratorsPerFacet(listOfGeneratorsPerFacet);
 
   resultTriangles.reserve(polytope->numberOfHalfSpaces());
   // For each half space in the polytope, get the generators that compose it
@@ -140,7 +144,8 @@ void DynamicPolytope::updateTrianglesPolitopix(boost::shared_ptr<Polytope_Rn> & 
 
   for(halfSpaceIter.begin(); halfSpaceIter.end() != true; halfSpaceIter.next())
   {
-    // mc_rtc::log::info("Face index is {}", halfSpaceIter.currentIteratorNumber());
+    // mc_rtc::log::info("Face index is {}, it has {} generators", halfSpaceIter.currentIteratorNumber(),
+    //                   listOfGeneratorsPerFacet.at(halfSpaceIter.currentIteratorNumber()).size());
     std::vector<Eigen::Vector3d> vertices;
     for(generatorIter.begin(); generatorIter.end() != true; generatorIter.next())
     {
@@ -150,10 +155,10 @@ void DynamicPolytope::updateTrianglesPolitopix(boost::shared_ptr<Polytope_Rn> & 
       {
         if(generatorIter.current()->getFacet(i) == halfSpaceIter.current())
         {
-          // mc_rtc::log::info("This generator belongs to the current face, adding it.");
+          // mc_rtc::log::info("Generator {} belongs to face {}, adding it.", generatorIter.currentIteratorNumber(),
+          // halfSpaceIter.currentIteratorNumber());
           // This generator is one of the current halfspace vertex
           // XXX here the index of the coordinate depends if we say 3d force polytope or directly 6d wrench polytope
-
           Eigen::Vector3d vertex(generatorIter.current()->getCoordinate(0), generatorIter.current()->getCoordinate(1),
                                  generatorIter.current()->getCoordinate(2));
           vertices.push_back(vertex);
@@ -161,23 +166,34 @@ void DynamicPolytope::updateTrianglesPolitopix(boost::shared_ptr<Polytope_Rn> & 
         }
       }
     }
-    // we got all vertices of the face in vertices vector, now order them for triangle array, ie order vertices so that
-    // the normal is towards the exterior
-    Eigen::Vector3d faceNormal;
-    faceNormal = (vertices.at(1) - vertices.at(0)).cross(vertices.at(2) - vertices.at(0));
-    faceNormal.normalize();
-
-    auto faceOffset = halfSpaceIter.current()->getConstant();
-
-    // testing for normal direction: if inside point of the face * normal - face offset > 0 then we need to invert the
-    // face
-    if(inside.dot(faceNormal) - faceOffset < 0.0)
+    /* we got all vertices of the face in vertices vector, now order them for triangle array, ie order vertices so that
+    the normal is towards the exterior
+    We don't necessarily have only 3 vertices for this face! if not, more calculations are necessary to decompose
+    the face into triangles
+    we assume the vertices were ordered + faces are convex: then we decompose into triangles by taking the first
+    vertex and making a face with the two neighbors until the second neighbor is the last vertex
+    */
+    auto nbVertices = vertices.size();
+    for(auto i = 0; i < nbVertices - 2; i++)
     {
-      resultTriangles.push_back({vertices.at(0), vertices.at(1), vertices.at(2)});
-    }
-    else
-    {
-      resultTriangles.push_back({vertices.at(0), vertices.at(2), vertices.at(1)});
+      // mc_rtc::log::info("Making a triangle with vertices {}, {} and {}", 0, i+1, i+2);
+      // make a triangle with vertices 0, i+1, i+2 and orient and emplace it normally
+      Eigen::Vector3d faceNormal;
+      faceNormal = (vertices.at(i + 1) - vertices.at(0)).cross(vertices.at(i + 2) - vertices.at(0));
+      faceNormal.normalize();
+
+      auto faceOffset = halfSpaceIter.current()->getConstant();
+
+      // testing for normal direction: if inside point of the face * normal - face offset > 0 then we need to invert
+      // the face
+      if(inside.dot(faceNormal) - faceOffset < 0.0)
+      {
+        resultTriangles.push_back({vertices.at(0), vertices.at(i + 1), vertices.at(i + 2)});
+      }
+      else
+      {
+        resultTriangles.push_back({vertices.at(0), vertices.at(i + 2), vertices.at(i + 1)});
+      }
     }
   }
 }
