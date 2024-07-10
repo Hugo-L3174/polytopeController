@@ -14,6 +14,8 @@ DynamicPolytope::DynamicPolytope(const std::string & name, std::set<std::string>
     boost::shared_ptr<Polytope_Rn> newCone(new Polytope_Rn());
     frictionCones_.emplace(contact, newCone);
   }
+  // init CWC polytope
+  CWC_.reset(new Polytope_Rn());
 }
 
 DynamicPolytope::~DynamicPolytope() {}
@@ -39,7 +41,8 @@ Polytope_Rn DynamicPolytope::buildForceConeFromContact(
   Polytope_Rn new3dForceCone;
   // newCone
   // for now generate cone generates only the directions for the rays: we assume it is a polyhedral cone
-  auto generators = generatePolyhedralConeGens(numberOfFrictionSides, contactSurface.second.rotation(), m_frictionCoef);
+  auto generators =
+      generatePolyhedralConeGens(numberOfFrictionSides, contactSurface.second.rotation(), m_frictionCoef, 0.3);
   // here we manipulate polytope objects so need to add origin as a generator on the polyhedral cone
   generators.emplace_back(Eigen::Vector3d::Zero());
   for(const auto g : generators)
@@ -98,11 +101,34 @@ void DynamicPolytope::computeConesFromContactSet(const mc_rbdyn::Robot & robot)
   }
 }
 
-// void DynamicPolytope::computeResultHull()
-// {
-//   // instanciation runs the whole algorithm
-//   // QuickHullAlgorithm convexHull(CWC_);
-// }
+void DynamicPolytope::computeMinkowskySumPolitopix()
+{
+  // putting it in vector form for library function
+  std::vector<boost::shared_ptr<Polytope_Rn>> polytopes;
+  for(auto active : activeContacts_)
+  {
+    polytopes.emplace_back(frictionCones_.at(active));
+  }
+
+  CWC_.reset(new Polytope_Rn);
+  MinkowskiSum Mink(polytopes, CWC_);
+}
+
+void DynamicPolytope::computeECMPRegion(Eigen::Vector3d comPosition)
+{
+  // First we negate the computed polytope
+  CWC_->negate();
+  // then translate it from origin to the robot CoM
+  boost::numeric::ublas::vector<double> CoM(3);
+  CoM[0] = comPosition.x();
+  CoM[1] = comPosition.y();
+  CoM[2] = comPosition.z();
+  TopGeomTools::translate(CWC_, CoM);
+  // add Delta Z for VRP
+  CoM[0] = 0.;
+  CoM[1] = 0.;
+  TopGeomTools::translate(CWC_, CoM);
+}
 
 void DynamicPolytope::updateTrianglesGUIPolitopix()
 {
@@ -113,6 +139,15 @@ void DynamicPolytope::updateTrianglesGUIPolitopix()
   for(const auto contact : contactsToRemove_)
   {
     clearTriangles(polytopeTrianglesMap_.at(contact));
+  }
+
+  if(!activeContacts_.empty())
+  {
+    updateTrianglesPolitopix(CWC_, CWCTriangles_);
+  }
+  else
+  {
+    clearTriangles(CWCTriangles_);
   }
 }
 
@@ -203,6 +238,8 @@ void DynamicPolytope::addToGUI(mc_rtc::gui::StateBuilder & gui, std::vector<std:
   category.push_back(name_);
   auto conesCat = category;
   conesCat.push_back("Friction cones");
+  auto CWCCat = category;
+  CWCCat.push_back("Contact Wrench Cone");
 
   for(const auto contact : possibleContacts_)
   {
@@ -211,15 +248,6 @@ void DynamicPolytope::addToGUI(mc_rtc::gui::StateBuilder & gui, std::vector<std:
         mc_rtc::gui::Polyhedron(contact, polyForceConfig_, [this, contact]() { return getPolyTriangles(contact); }));
   }
 
-  // gui.addElement(this, conesCat,
-  //                 // mc_rtc::gui::Polyhedron(fmt::format("{} balance region", name_), polyForceConfig_,
-  //                 //                        [this]() { return getPolyTriangles("LeftFootCenter"); }),
-  //                 mc_rtc::gui::Polyhedron(fmt::format("{} cone", name_), polyForceConfig_,
-  //                                        [this]() { return getPolyTriangles("RightFootCenter"); }),
-  //                 mc_rtc::gui::Polyhedron("LeftFoot Cone", polyForceConfig_,
-  //                                        [this]() { return getPolyTriangles("LeftFootCenter"); }),
-  //                 mc_rtc::gui::Polyhedron("RightHand Cone", polyForceConfig_,
-  //                                        [this]() { return getPolyTriangles("RightHand"); }),
-  //                 mc_rtc::gui::Polyhedron("LeftHand Cone", polyForceConfig_,
-  //                                        [this]() { return getPolyTriangles("LeftHand"); }));
+  gui.addElement(this, CWCCat,
+                 mc_rtc::gui::Polyhedron("CWC", polyMomentConfig_, [this]() { return getCWCTriangles(); }));
 }

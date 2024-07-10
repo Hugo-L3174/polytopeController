@@ -30,7 +30,8 @@ Eigen::MatrixXd linearizedFrictionCone(int numberOfFrictionSides, Eigen::Matrix3
 
 std::vector<Eigen::Vector3d> generatePolyhedralConeGens(int numberOfFrictionSides,
                                                         Eigen::Matrix3d m_rotation,
-                                                        double m_frictionCoef)
+                                                        double m_frictionCoef,
+                                                        double scale)
 {
   std::vector<Eigen::Vector3d> generators(numberOfFrictionSides);
   // here unit vector, but can be capped for cone?
@@ -46,7 +47,7 @@ std::vector<Eigen::Vector3d> generatePolyhedralConeGens(int numberOfFrictionSide
   for(unsigned int i = 0; i < numberOfFrictionSides; ++i)
   {
     // each generator is formed by the limit points of the linearized cone around the contact normal
-    generators[i] = m_rotation.transpose() * Eigen::AngleAxisd(step * i, normal) * gen;
+    generators[i] = m_rotation.transpose() * Eigen::AngleAxisd(step * i, normal) * gen * scale;
     // mc_rtc::log::info("generator {} of this cone is {}", i, generators[i].transpose());
   }
   return generators;
@@ -64,7 +65,8 @@ Eigen::MatrixXd compute6DGeneratorsMatrixSingleCone(
   Eigen::Index col(0);
 
   // mc_rtc::log::info("generating cones for a contact point");
-  auto generators = generatePolyhedralConeGens(numberOfFrictionSides, contactSurface.second.rotation(), m_frictionCoef);
+  auto generators =
+      generatePolyhedralConeGens(numberOfFrictionSides, contactSurface.second.rotation(), m_frictionCoef, 1);
   // contactPoint first is the pair of xHalfLength and yHalfLength of the rectangular contact
   std::vector<Eigen::Vector3d> points;
   points.emplace_back(contactSurface.first.first, contactSurface.first.second, 0);
@@ -108,7 +110,7 @@ Eigen::MatrixXd compute6DGeneratorsMatrixRaysCones(
   {
     // mc_rtc::log::info("generating cones for a contact point");
     auto generators =
-        generatePolyhedralConeGens(numberOfFrictionSides, contactSurface.second.rotation(), m_frictionCoef);
+        generatePolyhedralConeGens(numberOfFrictionSides, contactSurface.second.rotation(), m_frictionCoef, 1);
     // contactPoint first is the pair of xHalfLength and yHalfLength of the rectangular contact
     std::vector<Eigen::Vector3d> points;
     points.emplace_back(contactSurface.first.first, contactSurface.first.second, 0);

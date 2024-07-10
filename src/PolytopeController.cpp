@@ -44,6 +44,8 @@ bool PolytopeController::run()
   //----------------- politopix calculations
   // careful when doing stabilizer contacts: name has to be the centered one to have symetrical half lengths
   forcePoly_->computeConesFromContactSet(robot());
+  forcePoly_->computeMinkowskySumPolitopix();
+  forcePoly_->computeECMPRegion(robot().com());
   forcePoly_->updateTrianglesGUIPolitopix();
 
   // cdd calculations

@@ -8,7 +8,8 @@ Eigen::MatrixXd linearizedFrictionCone(int numberOfFrictionSides, Eigen::Matrix3
 // precision of the linearization
 std::vector<Eigen::Vector3d> generatePolyhedralConeGens(int numberOfFrictionSides,
                                                         Eigen::Matrix3d m_rotation,
-                                                        double m_frictionCoef);
+                                                        double m_frictionCoef,
+                                                        double scale);
 
 // Compute the 6 x n sized matrix of the generators for a single contact
 // application point is around what the generators must be applied

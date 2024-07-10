@@ -38,7 +38,9 @@ struct DynamicPolytope
   void computeConesFromContactSet(const mc_rbdyn::Robot & robot);
 
   // Computes the minkowsky sum of the given friction cones and puts the result in the CWC_ polytope object
-  void computeMinkowskySum();
+  void computeMinkowskySumPolitopix();
+
+  void computeECMPRegion(Eigen::Vector3d comPosition);
 
   // Computes the convex hull of the CWC_ polytope
   // Might be unnecessary, heavy algorithm to remove unnecessary faces
@@ -55,6 +57,11 @@ struct DynamicPolytope
   std::vector<std::array<Eigen::Vector3d, 3>> getPolyTriangles(const std::string & name)
   {
     return polytopeTrianglesMap_.at(name);
+  };
+
+  std::vector<std::array<Eigen::Vector3d, 3>> getCWCTriangles()
+  {
+    return CWCTriangles_;
   };
 
   // From the current contact set, deduce what contacts need to be removed from computation compared to last iteration
