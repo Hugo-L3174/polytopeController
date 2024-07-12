@@ -26,21 +26,33 @@ struct DynamicPolytope
 
   Polytope_Rn buildForceConeFromContact(int numberOfFrictionSides,
                                         std::pair<std::pair<double, double>, sva::PTransformd> & contactSurface,
-                                        double m_frictionCoef);
+                                        double m_frictionCoef,
+                                        double maxForce);
 
-  // Creates a 6d contact friction cone from the contact surface border points
-  // The generators are computed then used to build the Polytope_Rn object which is added to the cones vector
-  void addContactWrenchCone(const mc_rbdyn::Robot & robot, const std::string & surfaceName, double friction);
+  Polytope_Rn buildWrenchConeFromContact(int numberOfFrictionSides,
+                                         std::pair<std::pair<double, double>, sva::PTransformd> & contactSurface,
+                                         double m_frictionCoef,
+                                         double maxForce,
+                                         Eigen::Vector3d CoM);
 
   /* computes all cones from the surfaces with the given names (set by setCurrentContacts), reset the pointers of the
   map and updates the H-description of the poly using the double description algorithm.
   */
   void computeConesFromContactSet(const mc_rbdyn::Robot & robot);
 
+  /* computes directly the V-rep of the CWC from individual contact friction cones and the moment limits transformed to
+  the CoM (transformation from contact) then runs double description to update H-rep
+  */
+  void computeCWCFromContactSet(const mc_rbdyn::Robot & robot);
+
+  // Creates a 6d contact friction cone from the contact surface border points
+  // The generators are computed then used to build the Polytope_Rn object which is added to the cones vector
+  // void computeWrenchConesFromContactSet(const mc_rbdyn::Robot & robot);
+
   // Computes the minkowsky sum of the given friction cones and puts the result in the CWC_ polytope object
   void computeMinkowskySumPolitopix();
 
-  void computeECMPRegion(Eigen::Vector3d comPosition);
+  void computeECMPRegion(Eigen::Vector3d comPosition, const mc_rbdyn::Robot & robot);
 
   // Computes the convex hull of the CWC_ polytope
   // Might be unnecessary, heavy algorithm to remove unnecessary faces
@@ -54,14 +66,24 @@ struct DynamicPolytope
     frictionCones_.clear();
   };
 
-  std::vector<std::array<Eigen::Vector3d, 3>> getPolyTriangles(const std::string & name)
+  std::vector<std::array<Eigen::Vector3d, 3>> getForceConesTriangles(const std::string & name)
   {
-    return polytopeTrianglesMap_.at(name);
+    return forceConesTrianglesMap_.at(name);
   };
 
-  std::vector<std::array<Eigen::Vector3d, 3>> getCWCTriangles()
+  std::vector<std::array<Eigen::Vector3d, 3>> getCWCForceTriangles()
   {
-    return CWCTriangles_;
+    return CWCForceTriangles_;
+  };
+
+  std::vector<std::array<Eigen::Vector3d, 3>> getCWCMomentTriangles()
+  {
+    return CWCMomentTriangles_;
+  };
+
+  std::vector<std::array<Eigen::Vector3d, 3>> getECMPTriangles()
+  {
+    return eCMPTriangles_;
   };
 
   // From the current contact set, deduce what contacts need to be removed from computation compared to last iteration
@@ -79,16 +101,26 @@ struct DynamicPolytope
     }
   };
 
+  void computeECMP(const mc_rbdyn::Robot & robot);
+
   void load(const mc_rtc::Configuration & config);
-  void addToGUI(mc_rtc::gui::StateBuilder & gui, std::vector<std::string> category = {"DynamicPolytopes"});
+  void addToGUI(mc_rtc::gui::StateBuilder & gui,
+                double guiScale,
+                std::vector<std::string> category = {"DynamicPolytopes"});
   void removeFromGUI(mc_rtc::gui::StateBuilder & gui);
   void addToLogger(mc_rtc::Logger & logger, const std::string & prefix = "DynamicPolytopes");
   void removeFromLogger(mc_rtc::Logger & logger);
 
 protected:
   // Updates the faces vector used for polytope display (internal function)
-  void updateTrianglesPolitopix(boost::shared_ptr<Polytope_Rn> & polytope,
-                                std::vector<std::array<Eigen::Vector3d, 3>> & resultTriangles);
+  void update3DPolyTrianglesPolitopix(boost::shared_ptr<Polytope_Rn> & polytope,
+                                      std::vector<std::array<Eigen::Vector3d, 3>> & resultTriangles,
+                                      double guiScale);
+
+  void update6DPolyTrianglesPolitopix(boost::shared_ptr<Polytope_Rn> & polytope,
+                                      std::vector<std::array<Eigen::Vector3d, 3>> & resultMomentTriangles,
+                                      std::vector<std::array<Eigen::Vector3d, 3>> & resultForceTriangles,
+                                      double guiScale);
 
   void clearTriangles(std::vector<std::array<Eigen::Vector3d, 3>> & resultTriangles)
   {
@@ -102,15 +134,22 @@ protected:
 
   mc_rtc::gui::PolyhedronConfig polyForceConfig_;
   mc_rtc::gui::PolyhedronConfig polyMomentConfig_;
+  double guiScale_;
+
+  Eigen::Vector3d eCMP_;
 
   // politopix
   std::map<std::string, boost::shared_ptr<Polytope_Rn>> frictionCones_;
+
   boost::shared_ptr<Polytope_Rn> CWC_;
+  boost::shared_ptr<Polytope_Rn> eCMPRegion_;
 
   // cdd
   std::vector<std::shared_ptr<Eigen::Polyhedron>> cddFrictionCones_;
 
   // map of polytope triangles for display
-  std::map<std::string, std::vector<std::array<Eigen::Vector3d, 3>>> polytopeTrianglesMap_;
-  std::vector<std::array<Eigen::Vector3d, 3>> CWCTriangles_;
+  std::map<std::string, std::vector<std::array<Eigen::Vector3d, 3>>> forceConesTrianglesMap_;
+  std::vector<std::array<Eigen::Vector3d, 3>> CWCForceTriangles_;
+  std::vector<std::array<Eigen::Vector3d, 3>> CWCMomentTriangles_;
+  std::vector<std::array<Eigen::Vector3d, 3>> eCMPTriangles_;
 };

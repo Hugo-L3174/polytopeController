@@ -11,7 +11,12 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
   std::set<std::string> contactNames = {"LeftFootCenter", "RightFootCenter", "LeftHand", "RightHand"};
   forcePoly_ = std::make_shared<DynamicPolytope>(robot().name(), contactNames);
   forcePoly_->load(config("StabilityPolytope")(robot().name()));
-  forcePoly_->addToGUI(*gui());
+  forcePoly_->addToGUI(*gui(), 0.003);
+
+  logger().addLogEntry("dt_totalLoop", this, [this]() { return dt_loop_total().count(); });
+  logger().addLogEntry("dt_contactSet", this, [this]() { return dt_contactSet().count(); });
+  logger().addLogEntry("dt_minkSum", this, [this]() { return dt_minkSum().count(); });
+  logger().addLogEntry("dt_guiTriangles", this, [this]() { return dt_guiTriangles().count(); });
 
   wallPose_ = robot("wall").posW();
   wallPose_.translation() += Eigen::Vector3d(-0.05, 0.4, 1.1);
@@ -41,13 +46,21 @@ bool PolytopeController::run()
   }
   forcePoly_->setCurrentContacts(contactNames);
 
+  auto start_loop = mc_rtc::clock::now();
+
   //----------------- politopix calculations
   // careful when doing stabilizer contacts: name has to be the centered one to have symetrical half lengths
   forcePoly_->computeConesFromContactSet(robot());
+  dt_compute_contactSet_ = mc_rtc::clock::now() - start_loop;
+  auto start_minkSum = mc_rtc::clock::now();
   forcePoly_->computeMinkowskySumPolitopix();
-  forcePoly_->computeECMPRegion(robot().com());
+  dt_compute_minkSum_ = mc_rtc::clock::now() - start_minkSum;
+  forcePoly_->computeECMP(robot());
+  // forcePoly_->computeECMPRegion(robot().com(), robot()); // XXX not ok for 6d polytopes
+  auto start_guiTriangles = mc_rtc::clock::now();
   forcePoly_->updateTrianglesGUIPolitopix();
-
+  dt_compute_guiTriangles_ = mc_rtc::clock::now() - start_guiTriangles;
+  dt_loop_total_ = mc_rtc::clock::now() - start_loop;
   // cdd calculations
   // TODO
 
