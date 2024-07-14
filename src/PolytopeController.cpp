@@ -50,13 +50,15 @@ bool PolytopeController::run()
 
   //----------------- politopix calculations
   // careful when doing stabilizer contacts: name has to be the centered one to have symetrical half lengths
-  forcePoly_->computeConesFromContactSet(robot());
+  bool withMoments = true;
+  forcePoly_->computeConesFromContactSet(robot(), withMoments);
   dt_compute_contactSet_ = mc_rtc::clock::now() - start_loop;
   auto start_minkSum = mc_rtc::clock::now();
-  forcePoly_->computeMinkowskySumPolitopix();
+  forcePoly_->computeMinkowskySumPolitopix(withMoments);
   dt_compute_minkSum_ = mc_rtc::clock::now() - start_minkSum;
   forcePoly_->computeECMP(robot());
-  // forcePoly_->computeECMPRegion(robot().com(), robot()); // XXX not ok for 6d polytopes
+  forcePoly_->computeECMPRegion(robot().com(), robot()); // XXX not ok for 6d polytopes
+  // forcePoly_->computeMomentsRegion(robot().com(), robot());
   auto start_guiTriangles = mc_rtc::clock::now();
   forcePoly_->updateTrianglesGUIPolitopix();
   dt_compute_guiTriangles_ = mc_rtc::clock::now() - start_guiTriangles;
