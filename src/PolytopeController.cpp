@@ -10,7 +10,7 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
   // robotPolytope_->addToGUI(*gui());
   std::set<std::string> contactNames = {"LeftFootCenter", "RightFootCenter", "LeftHand", "RightHand"};
   forcePoly_ = std::make_shared<DynamicPolytope>(robot().name(), contactNames);
-  forcePoly_->load(config("StabilityPolytope")(robot().name()));
+  forcePoly_->load(config("DynamicPolytope")(robot().name()));
   forcePoly_->addToGUI(*gui(), 0.003);
 
   logger().addLogEntry("dt_totalLoop", this, [this]() { return dt_loop_total().count(); });
@@ -50,11 +50,10 @@ bool PolytopeController::run()
 
   //----------------- politopix calculations
   // careful when doing stabilizer contacts: name has to be the centered one to have symetrical half lengths
-  bool withMoments = true;
-  forcePoly_->computeConesFromContactSet(robot(), withMoments);
+  forcePoly_->computeConesFromContactSet(robot());
   dt_compute_contactSet_ = mc_rtc::clock::now() - start_loop;
   auto start_minkSum = mc_rtc::clock::now();
-  forcePoly_->computeMinkowskySumPolitopix(withMoments);
+  forcePoly_->computeMinkowskySumPolitopix();
   dt_compute_minkSum_ = mc_rtc::clock::now() - start_minkSum;
   forcePoly_->computeECMP(robot());
   forcePoly_->computeECMPRegion(robot().com(), robot()); // XXX not ok for 6d polytopes

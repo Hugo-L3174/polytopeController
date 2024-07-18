@@ -13,9 +13,9 @@
 
 #include "WrenchCones.h"
 
-#include "../../../politopix/trunk/PolyhedralAlgorithms_Rn.h"
-#include "../../../politopix/trunk/PrismaticPolyhedron_Rn.h"
-#include "../../../politopix/trunk/politopixAPI.h"
+#include <politopix/PolyhedralAlgorithms_Rn.h>
+#include <politopix/PrismaticPolyhedron_Rn.h>
+#include <politopix/politopixAPI.h>
 
 #include <eigen-cdd/Polyhedron.h>
 
@@ -42,7 +42,7 @@ struct DynamicPolytope
   /* computes all cones from the surfaces with the given names (set by setCurrentContacts), reset the pointers of the
   map and updates the H-description of the poly using the double description algorithm.
   */
-  void computeConesFromContactSet(const mc_rbdyn::Robot & robot, bool withMoments);
+  void computeConesFromContactSet(const mc_rbdyn::Robot & robot);
 
   /* computes directly the V-rep of the CWC from individual contact friction cones and the moment limits transformed to
   the CoM (transformation from contact) then runs double description to update H-rep
@@ -54,7 +54,7 @@ struct DynamicPolytope
   // void computeWrenchConesFromContactSet(const mc_rbdyn::Robot & robot);
 
   // Computes the minkowsky sum of the given friction cones and puts the result in the CWC_ polytope object
-  void computeMinkowskySumPolitopix(bool withMoments);
+  void computeMinkowskySumPolitopix();
 
   void computeECMPRegion(Eigen::Vector3d comPosition, const mc_rbdyn::Robot & robot);
 
@@ -112,6 +112,11 @@ struct DynamicPolytope
     }
   };
 
+  void setWithMoments(bool withMoments)
+  {
+    withMoments_ = withMoments;
+  };
+
   void computeECMP(const mc_rbdyn::Robot & robot);
 
   void load(const mc_rtc::Configuration & config);
@@ -142,6 +147,8 @@ protected:
   std::set<std::string> possibleContacts_;
   std::set<std::string> activeContacts_;
   std::set<std::string> contactsToRemove_;
+
+  bool withMoments_;
 
   mc_rtc::gui::PolyhedronConfig polyForceConfig_;
   mc_rtc::gui::PolyhedronConfig polyMomentConfig_;

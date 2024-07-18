@@ -91,7 +91,7 @@ transitions:
 init: PolytopeController_Initial
 
 
-StabilityPolytope:
+DynamicPolytope:
   hrp4:
     polyhedronForce: &polyhedron
       triangle_color: [1.0, 0.0, 0.0, 0.4]
@@ -111,6 +111,7 @@ StabilityPolytope:
     polyhedronMoment:
       <<: *polyhedron
       triangle_color: [0.0, 0.0, 1.0, 0.4]
+    withMoments: false
   human:
     polyhedronForce:
       <<: *polyhedron

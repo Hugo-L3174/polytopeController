@@ -35,6 +35,7 @@ void DynamicPolytope::load(const mc_rtc::Configuration & config)
   {
     polyMomentConfig_.fromConfig(*gui);
   }
+  config("withMoments", withMoments_);
 }
 
 void DynamicPolytope::buildForceConeFromContact(int numberOfFrictionSides,
@@ -125,7 +126,7 @@ void DynamicPolytope::buildWrenchConeFromContact(int numberOfFrictionSides,
   }
 }
 
-void DynamicPolytope::computeConesFromContactSet(const mc_rbdyn::Robot & robot, bool withMoments)
+void DynamicPolytope::computeConesFromContactSet(const mc_rbdyn::Robot & robot)
 {
   Rn::setDimension(3);
   auto frictionCoeff = 0.7;
@@ -137,11 +138,12 @@ void DynamicPolytope::computeConesFromContactSet(const mc_rbdyn::Robot & robot, 
     mc_tasks::lipm_stabilizer::internal::Contact newContact(robot, contactName, frictionCoeff);
     std::pair<std::pair<double, double>, sva::PTransformd> cont(
         std::pair<double, double>(newContact.halfLength(), newContact.halfWidth()), newContact.surfacePose());
-    if(!withMoments)
+    if(!withMoments_)
     {
       // update the correct cone in the map
       buildForceConeFromContact(nbFrictionSides, cont, frictionCones_.at(contactName), newContact.friction(), maxForce);
       // update faces of the cone
+      // XXX find a way to not need face computations for mink sum
       DoubleDescriptionFromGenerators::Compute(frictionCones_.at(contactName), 1000);
       // mc_rtc::log::info("Cone for {} has {} generators and {} facets", contactName,
       //                   frictionCones_.at(contactName)->numberOfGenerators(),
@@ -157,7 +159,7 @@ void DynamicPolytope::computeConesFromContactSet(const mc_rbdyn::Robot & robot, 
   }
 }
 
-void DynamicPolytope::computeMinkowskySumPolitopix(bool withMoments)
+void DynamicPolytope::computeMinkowskySumPolitopix()
 {
   CWCForces_->reset();
   CWCMoments_->reset();
@@ -167,7 +169,7 @@ void DynamicPolytope::computeMinkowskySumPolitopix(bool withMoments)
   for(auto active : activeContacts_)
   {
     polytopesForces.emplace_back(frictionCones_.at(active));
-    if(withMoments)
+    if(withMoments_)
     {
       polytopesMoments.emplace_back(frictionConesMoments_.at(active));
     }
@@ -176,7 +178,7 @@ void DynamicPolytope::computeMinkowskySumPolitopix(bool withMoments)
   MinkowskiSum Mink(polytopesForces, CWCForces_);
   // mc_rtc::log::info("CWCForces_ has {} generators and {} facets", CWCForces_->numberOfGenerators(),
   // CWCForces_->numberOfHalfSpaces());
-  if(withMoments)
+  if(withMoments_)
   {
     MinkowskiSum Mink(polytopesMoments, CWCMoments_);
     // mc_rtc::log::info("CWCMoments_ has {} generators and {} facets", CWCMoments_->numberOfGenerators(),
@@ -231,13 +233,19 @@ void DynamicPolytope::updateTrianglesGUIPolitopix()
   for(const auto contact : activeContacts_)
   {
     update3DPolyTrianglesPolitopix(frictionCones_.at(contact), forceConesTrianglesMap_.at(contact), guiScale_);
-    update3DPolyTrianglesPolitopix(frictionConesMoments_.at(contact), momentPolytopesTrianglesMap_.at(contact),
-                                   guiScale_);
+    if(withMoments_)
+    {
+      update3DPolyTrianglesPolitopix(frictionConesMoments_.at(contact), momentPolytopesTrianglesMap_.at(contact),
+                                     guiScale_);
+    }
   }
   for(const auto contact : contactsToRemove_)
   {
     clearTriangles(forceConesTrianglesMap_.at(contact));
-    clearTriangles(momentPolytopesTrianglesMap_.at(contact));
+    if(withMoments_)
+    {
+      clearTriangles(momentPolytopesTrianglesMap_.at(contact));
+    }
   }
 
   if(!activeContacts_.empty())
@@ -245,12 +253,18 @@ void DynamicPolytope::updateTrianglesGUIPolitopix()
     // gui scale for CWC should be 1, it is position space and not force space (because eCMP)
     // update6DPolyTrianglesPolitopix(CWC_, CWCMomentTriangles_, CWCForceTriangles_, guiScale_);
     update3DPolyTrianglesPolitopix(CWCForces_, CWCForceTriangles_, 1);
-    update3DPolyTrianglesPolitopix(CWCMoments_, CWCMomentTriangles_, guiScale_);
+    if(withMoments_)
+    {
+      update3DPolyTrianglesPolitopix(CWCMoments_, CWCMomentTriangles_, guiScale_);
+    }
   }
   else
   {
     clearTriangles(CWCForceTriangles_);
-    clearTriangles(CWCMomentTriangles_);
+    if(withMoments_)
+    {
+      clearTriangles(CWCMomentTriangles_);
+    }
   }
 }
 
