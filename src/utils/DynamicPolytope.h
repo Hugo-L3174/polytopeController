@@ -24,6 +24,7 @@ struct DynamicPolytope
   DynamicPolytope(const std::string & name, std::set<std::string> contactNames);
   ~DynamicPolytope();
 
+  // compute the contact force cone into a 3D polytope
   void buildForceConeFromContact(int numberOfFrictionSides,
                                  std::pair<std::pair<double, double>, sva::PTransformd> & contactSurface,
                                  boost::shared_ptr<Polytope_Rn> & forceCone,
@@ -39,6 +40,10 @@ struct DynamicPolytope
                                   double maxForce,
                                   Eigen::Vector3d CoM);
 
+  // compute the force polytope of the contact from the wrench limits of the limb actuating it
+
+  void buildActuationPolytopeFromContact(); 
+
   /* computes all cones from the surfaces with the given names (set by setCurrentContacts), reset the pointers of the
   map and updates the H-description of the poly using the double description algorithm.
   */
@@ -48,6 +53,12 @@ struct DynamicPolytope
   the CoM (transformation from contact) then runs double description to update H-rep
   */
   void computeCWCFromContactSet(const mc_rbdyn::Robot & robot);
+
+
+  /* Computes the 3d volume formed between the possible ZMP area(s) and the CoM of the robot
+  TODO this is potentially several convex areas! (caron tro) see how to handle this
+  */
+  void computeZMPRegion(Eigen::Vector3d comPosition);
 
   // Creates a 6d contact friction cone from the contact surface border points
   // The generators are computed then used to build the Polytope_Rn object which is added to the cones vector
@@ -60,6 +71,11 @@ struct DynamicPolytope
 
   void computeMomentsRegion(Eigen::Vector3d comPosition, const mc_rbdyn::Robot & robot);
 
+  /* Computes the intersection between the eCMP region and the ZMP region to get the zero moment region, 
+  put in zeroMomentRegion_ 
+  */
+  void computeZeroMomentIntersection();
+
   // Computes the convex hull of the CWC_ polytope
   // Might be unnecessary, heavy algorithm to remove unnecessary faces
   void computeResultHull();
@@ -67,10 +83,6 @@ struct DynamicPolytope
   // Updates the internal maps of triangles for gui display for the given contact names
   void updateTrianglesGUIPolitopix();
 
-  void resetContactSet()
-  {
-    frictionCones_.clear();
-  };
 
   std::vector<std::array<Eigen::Vector3d, 3>> getForceConesTriangles(const std::string & name)
   {
@@ -163,7 +175,10 @@ protected:
 
   boost::shared_ptr<Polytope_Rn> CWCForces_;
   boost::shared_ptr<Polytope_Rn> CWCMoments_;
-  boost::shared_ptr<Polytope_Rn> eCMPRegion_;
+  // boost::shared_ptr<Polytope_Rn> eCMPRegion_;
+
+  boost::shared_ptr<Polytope_Rn> zmpRegion_;
+  boost::shared_ptr<Polytope_Rn> zeroMomentRegion_;
 
   // cdd
   std::vector<std::shared_ptr<Eigen::Polyhedron>> cddFrictionCones_;

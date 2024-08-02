@@ -21,6 +21,8 @@ DynamicPolytope::DynamicPolytope(const std::string & name, std::set<std::string>
   // init CWC polytope
   CWCForces_.reset(new Polytope_Rn());
   CWCMoments_.reset(new Polytope_Rn());
+  
+  zeroMomentRegion_.reset(new Polytope_Rn());
 }
 
 DynamicPolytope::~DynamicPolytope() {}
@@ -124,6 +126,11 @@ void DynamicPolytope::buildWrenchConeFromContact(int numberOfFrictionSides,
       momentPoly->addGenerator(momentGN);
     }
   }
+}
+
+void DynamicPolytope::buildActuationPolytopeFromContact()
+{
+  
 }
 
 void DynamicPolytope::computeConesFromContactSet(const mc_rbdyn::Robot & robot)
