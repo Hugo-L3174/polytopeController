@@ -111,6 +111,12 @@ DynamicPolytope:
     polyhedronMoment:
       <<: *polyhedron
       triangle_color: [0.0, 0.0, 1.0, 0.4]
+    polyhedronZMP:
+      <<: *polyhedron
+      triangle_color: [0.0, 1.0, 0.0, 0.4]
+    polyhedronZeroMomentArea:
+      <<: *polyhedron
+      triangle_color: [0.7, 0.3, 0.0, 0.4]
     withMoments: false
   human:
     polyhedronForce:

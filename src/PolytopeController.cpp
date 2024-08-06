@@ -57,6 +57,8 @@ bool PolytopeController::run()
   dt_compute_minkSum_ = mc_rtc::clock::now() - start_minkSum;
   forcePoly_->computeECMP(robot());
   forcePoly_->computeECMPRegion(robot().com(), robot()); // XXX not ok for 6d polytopes
+  forcePoly_->computeZMPRegion(robot().com(), robot());
+  forcePoly_->computeZeroMomentIntersection();
   // forcePoly_->computeMomentsRegion(robot().com(), robot());
   auto start_guiTriangles = mc_rtc::clock::now();
   forcePoly_->updateTrianglesGUIPolitopix();

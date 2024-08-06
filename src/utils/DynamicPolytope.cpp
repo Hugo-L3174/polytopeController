@@ -21,7 +21,9 @@ DynamicPolytope::DynamicPolytope(const std::string & name, std::set<std::string>
   // init CWC polytope
   CWCForces_.reset(new Polytope_Rn());
   CWCMoments_.reset(new Polytope_Rn());
-  
+
+  // init zmp region and intersection with ecmp region
+  zmpRegion_.reset(new Polytope_Rn());
   zeroMomentRegion_.reset(new Polytope_Rn());
 }
 
@@ -36,6 +38,14 @@ void DynamicPolytope::load(const mc_rtc::Configuration & config)
   if(auto gui = config.find("polyhedronMoment"))
   {
     polyMomentConfig_.fromConfig(*gui);
+  }
+  if(auto gui = config.find("polyhedronZMP"))
+  {
+    polyZMPConfig_.fromConfig(*gui);
+  }
+  if(auto gui = config.find("polyhedronZeroMomentArea"))
+  {
+    polyZeroMomentAreaConfig_.fromConfig(*gui);
   }
   config("withMoments", withMoments_);
 }
@@ -128,9 +138,10 @@ void DynamicPolytope::buildWrenchConeFromContact(int numberOfFrictionSides,
   }
 }
 
-void DynamicPolytope::buildActuationPolytopeFromContact()
+void DynamicPolytope::buildActuationPolytopeFromContact(boost::shared_ptr<Polytope_Rn> & actuationPolytope)
 {
-  
+  // need to find the branches belonging to the contacts
+  actuationPolytope->reset();
 }
 
 void DynamicPolytope::computeConesFromContactSet(const mc_rbdyn::Robot & robot)
@@ -213,6 +224,48 @@ void DynamicPolytope::computeECMPRegion(Eigen::Vector3d comPosition, const mc_rb
   // TopGeomTools::translate(CWCForces_, CoM);
 }
 
+void DynamicPolytope::computeZMPRegion(Eigen::Vector3d comPosition, const mc_rbdyn::Robot & robot)
+{
+  // XXX dummy zone for now: convex area formed by the polygon envelope of feet + com position
+  int dim = 3;
+  zmpRegion_->reset();
+
+  // manually adding left foot points
+  std::vector<Eigen::Vector3d> generators;
+  auto lfPoints = robot.surface("LeftFoot").points();
+  for(auto lfPoint : lfPoints)
+  {
+    boost::shared_ptr<Generator_Rn> gn(new Generator_Rn(dim));
+    boost::numeric::ublas::vector<double> coords(3);
+    coords.insert_element(0, lfPoint.translation().x());
+    coords.insert_element(1, lfPoint.translation().y());
+    coords.insert_element(2, lfPoint.translation().z());
+    gn->setCoordinates(coords);
+    zmpRegion_->addGenerator(gn);
+  }
+
+  boost::shared_ptr<Generator_Rn> CoMgn(new Generator_Rn(dim));
+  boost::numeric::ublas::vector<double> coords(3);
+  coords.insert_element(0, comPosition.x());
+  coords.insert_element(1, comPosition.y());
+  coords.insert_element(2, comPosition.z());
+  CoMgn->setCoordinates(coords);
+  zmpRegion_->addGenerator(CoMgn);
+
+  DoubleDescriptionFromGenerators::Compute(zmpRegion_, 1000);
+}
+
+void DynamicPolytope::computeZeroMomentIntersection()
+{
+  zeroMomentRegion_->reset();
+  // making a deep copy of the force polytope to use as base for intersection with zmp region
+  // (avoids shared_ptr problems)
+  politopixAPI::copyPolytope(CWCForces_, zeroMomentRegion_);
+
+  // politopixAPI::computeIntersection(CWCForces_, zmpRegion_, zeroMomentRegion_);
+  politopixAPI::computeIntersectionWithoutCheck(zeroMomentRegion_, zmpRegion_);
+}
+
 void DynamicPolytope::computeMomentsRegion(Eigen::Vector3d comPosition, const mc_rbdyn::Robot & robot)
 {
   // We scale the moment polytope according to the expression of the difference between eCMP and ZMP:
@@ -260,6 +313,11 @@ void DynamicPolytope::updateTrianglesGUIPolitopix()
     // gui scale for CWC should be 1, it is position space and not force space (because eCMP)
     // update6DPolyTrianglesPolitopix(CWC_, CWCMomentTriangles_, CWCForceTriangles_, guiScale_);
     update3DPolyTrianglesPolitopix(CWCForces_, CWCForceTriangles_, 1);
+    // mc_rtc::log::info("force triangle is of size {}", CWCForceTriangles_.size());
+    // scale 1 here: already position space
+    update3DPolyTrianglesPolitopix(zmpRegion_, ZMPTriangles_, 1);
+    update3DPolyTrianglesPolitopix(zeroMomentRegion_, zeroMomentTriangles_, 1);
+
     if(withMoments_)
     {
       update3DPolyTrianglesPolitopix(CWCMoments_, CWCMomentTriangles_, guiScale_);
@@ -268,6 +326,8 @@ void DynamicPolytope::updateTrianglesGUIPolitopix()
   else
   {
     clearTriangles(CWCForceTriangles_);
+    clearTriangles(ZMPTriangles_);
+    clearTriangles(zeroMomentTriangles_);
     if(withMoments_)
     {
       clearTriangles(CWCMomentTriangles_);
@@ -287,20 +347,26 @@ void DynamicPolytope::update3DPolyTrianglesPolitopix(boost::shared_ptr<Polytope_
   // Assuming the given polytope is already computed, get the generators for each facet, then use their coordinates to
   // create the faces in mc_rtc format.
 
-  // This fills the list with vectors of the ids of the generators that compose each face (Never used)
-  // std::vector<std::vector<unsigned int>> listOfGeneratorsPerFacet;
-  // polytope->getGeneratorsPerFacet(listOfGeneratorsPerFacet);
-
   resultTriangles.reserve(polytope->numberOfHalfSpaces());
+
   // For each half space in the polytope, get the generators that compose it
   constIteratorOfListOfGeometricObjects<boost::shared_ptr<HalfSpace_Rn>> halfSpaceIter(polytope->getListOfHalfSpaces());
   constIteratorOfListOfGeometricObjects<boost::shared_ptr<Generator_Rn>> generatorIter(polytope->getListOfGenerators());
 
   // get a point that we know is inside the polytope to compute the faces normals
   boost::numeric::ublas::vector<double> insidePoint(Rn::getDimension());
-  TopGeomTools::gravityCenter(polytope, insidePoint);
+
+  // gravityCenter throws if there are no generators
+  if(polytope->numberOfGenerators() != 0)
+  {
+    TopGeomTools::gravityCenter(polytope, insidePoint);
+  }
   // recast it in eigen for practical reasons
   Eigen::Vector3d inside(insidePoint[0], insidePoint[1], insidePoint[2]);
+
+  // This fills the list with vectors of the ids of the generators that compose each face (used for debug message)
+  // std::vector<std::vector<unsigned int>> listOfGeneratorsPerFacet;
+  // polytope->getGeneratorsPerFacet(listOfGeneratorsPerFacet);
 
   for(halfSpaceIter.begin(); halfSpaceIter.end() != true; halfSpaceIter.next())
   {
@@ -318,7 +384,6 @@ void DynamicPolytope::update3DPolyTrianglesPolitopix(boost::shared_ptr<Polytope_
           // mc_rtc::log::info("Generator {} belongs to face {}, adding it.", generatorIter.currentIteratorNumber(),
           // halfSpaceIter.currentIteratorNumber());
           // This generator is one of the current halfspace vertex
-          // XXX here the index of the coordinate depends if we say 3d force polytope or directly 6d wrench polytope
           Eigen::Vector3d vertex(generatorIter.current()->getCoordinate(0), generatorIter.current()->getCoordinate(1),
                                  generatorIter.current()->getCoordinate(2));
           vertices.push_back(vertex * guiScale);
@@ -480,7 +545,10 @@ void DynamicPolytope::addToGUI(mc_rtc::gui::StateBuilder & gui, double guiScale,
   gui.addElement(
       this, CWCCat,
       mc_rtc::gui::Polyhedron("CWC forces", polyForceConfig_, [this]() { return getCWCForceTriangles(); }),
-      mc_rtc::gui::Polyhedron("CWC moments", polyMomentConfig_, [this]() { return getCWCMomentTriangles(); }));
+      mc_rtc::gui::Polyhedron("CWC moments", polyMomentConfig_, [this]() { return getCWCMomentTriangles(); }),
+      mc_rtc::gui::Polyhedron("ZMP area", polyZMPConfig_, [this]() { return getZMPTriangles(); }),
+      mc_rtc::gui::Polyhedron("Zero moment region", polyZeroMomentAreaConfig_,
+                              [this]() { return getZeroMomentTriangles(); }));
 
   mc_rtc::gui::ArrowConfig Arrow;
   Arrow.scale = guiScale_;

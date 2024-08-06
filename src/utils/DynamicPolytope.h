@@ -41,8 +41,10 @@ struct DynamicPolytope
                                   Eigen::Vector3d CoM);
 
   // compute the force polytope of the contact from the wrench limits of the limb actuating it
-
-  void buildActuationPolytopeFromContact(); 
+  // args should be a polytope pointer/ref and a way to structure the limb Jacobian (only for a chosen limb)
+  // think about how to compute bounds if jac non diagonal (redundancy): orso2018ral says QP? or LP?
+  // also if not considering zero vel and acc how to use inertia matrix elements
+  void buildActuationPolytopeFromContact(boost::shared_ptr<Polytope_Rn> & actuationPolytope);
 
   /* computes all cones from the surfaces with the given names (set by setCurrentContacts), reset the pointers of the
   map and updates the H-description of the poly using the double description algorithm.
@@ -54,11 +56,10 @@ struct DynamicPolytope
   */
   void computeCWCFromContactSet(const mc_rbdyn::Robot & robot);
 
-
   /* Computes the 3d volume formed between the possible ZMP area(s) and the CoM of the robot
   TODO this is potentially several convex areas! (caron tro) see how to handle this
   */
-  void computeZMPRegion(Eigen::Vector3d comPosition);
+  void computeZMPRegion(Eigen::Vector3d comPosition, const mc_rbdyn::Robot & robot);
 
   // Creates a 6d contact friction cone from the contact surface border points
   // The generators are computed then used to build the Polytope_Rn object which is added to the cones vector
@@ -71,8 +72,8 @@ struct DynamicPolytope
 
   void computeMomentsRegion(Eigen::Vector3d comPosition, const mc_rbdyn::Robot & robot);
 
-  /* Computes the intersection between the eCMP region and the ZMP region to get the zero moment region, 
-  put in zeroMomentRegion_ 
+  /* Computes the intersection between the eCMP region and the ZMP region to get the zero moment region,
+  put in zeroMomentRegion_
   */
   void computeZeroMomentIntersection();
 
@@ -82,7 +83,6 @@ struct DynamicPolytope
 
   // Updates the internal maps of triangles for gui display for the given contact names
   void updateTrianglesGUIPolitopix();
-
 
   std::vector<std::array<Eigen::Vector3d, 3>> getForceConesTriangles(const std::string & name)
   {
@@ -107,6 +107,16 @@ struct DynamicPolytope
   std::vector<std::array<Eigen::Vector3d, 3>> getECMPTriangles()
   {
     return eCMPTriangles_;
+  };
+
+  std::vector<std::array<Eigen::Vector3d, 3>> getZMPTriangles()
+  {
+    return ZMPTriangles_;
+  };
+
+  std::vector<std::array<Eigen::Vector3d, 3>> getZeroMomentTriangles()
+  {
+    return zeroMomentTriangles_;
   };
 
   // From the current contact set, deduce what contacts need to be removed from computation compared to last iteration
@@ -164,6 +174,8 @@ protected:
 
   mc_rtc::gui::PolyhedronConfig polyForceConfig_;
   mc_rtc::gui::PolyhedronConfig polyMomentConfig_;
+  mc_rtc::gui::PolyhedronConfig polyZMPConfig_;
+  mc_rtc::gui::PolyhedronConfig polyZeroMomentAreaConfig_;
   double guiScale_;
 
   sva::ForceVecd robotNetWrench_;
@@ -189,4 +201,6 @@ protected:
   std::vector<std::array<Eigen::Vector3d, 3>> CWCForceTriangles_;
   std::vector<std::array<Eigen::Vector3d, 3>> CWCMomentTriangles_;
   std::vector<std::array<Eigen::Vector3d, 3>> eCMPTriangles_;
+  std::vector<std::array<Eigen::Vector3d, 3>> ZMPTriangles_;
+  std::vector<std::array<Eigen::Vector3d, 3>> zeroMomentTriangles_;
 };
