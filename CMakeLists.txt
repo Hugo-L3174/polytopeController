@@ -15,7 +15,7 @@ if(NOT TARGET mc_rtc::mc_control)
   find_package(Stabiliplus REQUIRED)
   find_package(sch-core REQUIRED)
   find_package(eigen-cdd REQUIRED)
-  find_package(polito REQUIRED)
+  find_package(mc_dynamic_polytopes REQUIRED)
 endif()
 
 add_subdirectory(src)

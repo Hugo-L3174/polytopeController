@@ -3,8 +3,8 @@
 #include <mc_control/fsm/Controller.h>
 #include <mc_control/mc_controller.h>
 
-#include "utils/DynamicPolytope.h"
 #include "utils/MCStabilityPolytope.h"
+#include <mc_dynamic_polytopes/DynamicPolytope.h>
 
 #include "api.h"
 

@@ -2,16 +2,12 @@ set(controller_SRC
   PolytopeController.cpp
   utils/MCStabilityPolytope.cpp
   utils/PointProjector.cpp
-  utils/DynamicPolytope.cpp
-  utils/WrenchCones.cpp
 )
 
 set(controller_HDR
   PolytopeController.h
   utils/MCStabilityPolytope.h
   utils/PointProjector.h
-  utils/DynamicPolytope.h
-  utils/WrenchCones.h
 )
 
 
@@ -23,7 +19,7 @@ target_link_libraries(${PROJECT_NAME}
   Stabiliplus::ProblemDescriptor
   Stabiliplus::StabilityPolytope
   sch-core::sch-core
-  Politopix::polito
+  mc_dynamic_polytopes::DynamicPolytope
   eigen-cdd::eigen-cdd
   )
 install(TARGETS ${PROJECT_NAME}
