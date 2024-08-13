@@ -8,10 +8,11 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
   // robotPolytope_->load(config("StabilityPolytope")(robot().name()));
   // robotPolytope_->addToLogger(logger());
   // robotPolytope_->addToGUI(*gui());
-  std::set<std::string> contactNames = {"LeftFootCenter", "RightFootCenter", "LeftHand", "RightHand"};
-  forcePoly_ = std::make_shared<DynamicPolytope>(robot().name(), contactNames);
-  forcePoly_->load(config("DynamicPolytope")(robot().name()));
-  forcePoly_->addToGUI(*gui(), 0.003);
+  // XXX no need to specify center frames of surfaces for contacts
+  std::set<std::string> contactNames = {"LeftFoot", "RightFoot", "LeftHand", "RightHand"};
+  DCMPoly_ = std::make_shared<DynamicPolytope>(robot().name(), contactNames);
+  DCMPoly_->load(config("DynamicPolytope")("mainRobot"));
+  DCMPoly_->addToGUI(*gui(), 0.003);
 
   logger().addLogEntry("dt_totalLoop", this, [this]() { return dt_loop_total().count(); });
   logger().addLogEntry("dt_contactSet", this, [this]() { return dt_contactSet().count(); });
@@ -44,24 +45,24 @@ bool PolytopeController::run()
   {
     contactNames.emplace_back(contact.r1Surface()->name());
   }
-  forcePoly_->setCurrentContacts(contactNames);
+  DCMPoly_->setCurrentContacts(contactNames);
 
   auto start_loop = mc_rtc::clock::now();
 
   //----------------- politopix calculations
   // careful when doing stabilizer contacts: name has to be the centered one to have symetrical half lengths
-  forcePoly_->computeConesFromContactSet(robot());
+  DCMPoly_->computeConesFromContactSet(robot());
   dt_compute_contactSet_ = mc_rtc::clock::now() - start_loop;
   auto start_minkSum = mc_rtc::clock::now();
-  forcePoly_->computeMinkowskySumPolitopix();
+  DCMPoly_->computeMinkowskySumPolitopix();
   dt_compute_minkSum_ = mc_rtc::clock::now() - start_minkSum;
-  forcePoly_->computeECMP(robot());
-  forcePoly_->computeECMPRegion(robot().com(), robot()); // XXX not ok for 6d polytopes
-  forcePoly_->computeZMPRegion(robot().com(), robot());
-  forcePoly_->computeZeroMomentIntersection();
-  // forcePoly_->computeMomentsRegion(robot().com(), robot());
+  DCMPoly_->computeECMP(robot());
+  DCMPoly_->computeECMPRegion(robot().com(), robot()); // XXX not ok for 6d polytopes
+  DCMPoly_->computeZMPRegion(robot().com(), robot());
+  DCMPoly_->computeZeroMomentIntersection();
+  // DCMPoly_->computeMomentsRegion(robot().com(), robot());
   auto start_guiTriangles = mc_rtc::clock::now();
-  forcePoly_->updateTrianglesGUIPolitopix();
+  DCMPoly_->updateTrianglesGUIPolitopix();
   dt_compute_guiTriangles_ = mc_rtc::clock::now() - start_guiTriangles;
   dt_loop_total_ = mc_rtc::clock::now() - start_loop;
   // cdd calculations
