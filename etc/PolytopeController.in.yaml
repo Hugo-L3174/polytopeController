@@ -38,10 +38,10 @@ collisions:
 # Initial set of contacts
 contacts:
 - r2: ground
-  r1Surface: LeftFootCenter
+  r1Surface: LeftFoot
   r2Surface: AllGround
 - r2: ground
-  r1Surface: RightFootCenter
+  r1Surface: RightFoot
   r2Surface: AllGround
 
 # Some options for a specific robot
@@ -92,7 +92,7 @@ init: PolytopeController_Initial
 
 
 DynamicPolytope:
-  hrp4:
+  mainRobot:
     polyhedronForce: &polyhedron
       triangle_color: [1.0, 0.0, 0.0, 0.4]
       show_triangle: true
