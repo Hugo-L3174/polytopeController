@@ -8,7 +8,6 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
   // robotPolytope_->load(config("StabilityPolytope")(robot().name()));
   // robotPolytope_->addToLogger(logger());
   // robotPolytope_->addToGUI(*gui());
-  // XXX no need to specify center frames of surfaces for contacts
   std::set<std::string> contactNames = {"LeftFoot", "RightFoot", "LeftHand", "RightHand"};
   DCMPoly_ = std::make_shared<DynamicPolytope>(robot().name(), contactNames);
   DCMPoly_->load(config("DynamicPolytope")("mainRobot"));
@@ -17,6 +16,7 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
   logger().addLogEntry("dt_totalLoop", this, [this]() { return dt_loop_total().count(); });
   logger().addLogEntry("dt_contactSet", this, [this]() { return dt_contactSet().count(); });
   logger().addLogEntry("dt_minkSum", this, [this]() { return dt_minkSum().count(); });
+  logger().addLogEntry("dt_updatePlanes", this, [this]() { return dt_updatePlanes().count(); });
   logger().addLogEntry("dt_guiTriangles", this, [this]() { return dt_guiTriangles().count(); });
 
   wallPose_ = robot("wall").posW();
@@ -50,7 +50,6 @@ bool PolytopeController::run()
   auto start_loop = mc_rtc::clock::now();
 
   //----------------- politopix calculations
-  // careful when doing stabilizer contacts: name has to be the centered one to have symetrical half lengths
   DCMPoly_->computeConesFromContactSet(robot());
   dt_compute_contactSet_ = mc_rtc::clock::now() - start_loop;
   auto start_minkSum = mc_rtc::clock::now();
@@ -61,6 +60,9 @@ bool PolytopeController::run()
   DCMPoly_->computeZMPRegion(robot().com(), robot());
   DCMPoly_->computeZeroMomentIntersection();
   // DCMPoly_->computeMomentsRegion(robot().com(), robot());
+  auto start_updatePlanes = mc_rtc::clock::now();
+  DCMPoly_->updateECMPPlanes(eCMPPlanesNormals_, eCMPPlanesOffsets_);
+  dt_update_planes_ = mc_rtc::clock::now() - start_updatePlanes;
   auto start_guiTriangles = mc_rtc::clock::now();
   DCMPoly_->updateTrianglesGUIPolitopix();
   dt_compute_guiTriangles_ = mc_rtc::clock::now() - start_guiTriangles;

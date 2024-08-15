@@ -37,6 +37,11 @@ struct PolytopeController_DLLAPI PolytopeController : public mc_control::fsm::Co
     return dt_compute_minkSum_;
   }
 
+  inline mc_rtc::duration_ms dt_updatePlanes() const noexcept
+  {
+    return dt_update_planes_;
+  }
+
   inline mc_rtc::duration_ms dt_guiTriangles() const noexcept
   {
     return dt_compute_guiTriangles_;
@@ -53,9 +58,14 @@ private:
   // mc_dynamic_polytopes element
   std::shared_ptr<DynamicPolytope> DCMPoly_;
 
+  // planes normals and offsets for eCMP region testing and constraint
+  Eigen::MatrixX3d eCMPPlanesNormals_;
+  Eigen::VectorXd eCMPPlanesOffsets_;
+
   // timers to measure computation times
   mc_rtc::duration_ms dt_loop_total_;
   mc_rtc::duration_ms dt_compute_contactSet_;
   mc_rtc::duration_ms dt_compute_minkSum_;
+  mc_rtc::duration_ms dt_update_planes_;
   mc_rtc::duration_ms dt_compute_guiTriangles_;
 };
