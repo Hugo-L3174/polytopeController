@@ -21,32 +21,6 @@ struct PolytopeController_DLLAPI PolytopeController : public mc_control::fsm::Co
   // legacy function to update mcstabilitypolytope (wrapper for stabiliplus)
   void updateObjective(MCStabilityPolytope * polytope_, Eigen::Vector3d currentPos, Eigen::Vector3d & objective);
 
-  inline mc_rtc::duration_ms dt_loop_total() const noexcept
-  {
-    // std::lock_guard<std::mutex> lock(resultMutex_);
-    return dt_loop_total_;
-  }
-
-  inline mc_rtc::duration_ms dt_contactSet() const noexcept
-  {
-    return dt_compute_contactSet_;
-  }
-
-  inline mc_rtc::duration_ms dt_minkSum() const noexcept
-  {
-    return dt_compute_minkSum_;
-  }
-
-  inline mc_rtc::duration_ms dt_updatePlanes() const noexcept
-  {
-    return dt_update_planes_;
-  }
-
-  inline mc_rtc::duration_ms dt_guiTriangles() const noexcept
-  {
-    return dt_compute_guiTriangles_;
-  }
-
 private:
   sva::PTransformd wallPose_;
   bool firstPolyOK_ = false;
@@ -61,11 +35,4 @@ private:
   // planes normals and offsets for eCMP region testing and constraint
   Eigen::MatrixX3d eCMPPlanesNormals_;
   Eigen::VectorXd eCMPPlanesOffsets_;
-
-  // timers to measure computation times
-  mc_rtc::duration_ms dt_loop_total_;
-  mc_rtc::duration_ms dt_compute_contactSet_;
-  mc_rtc::duration_ms dt_compute_minkSum_;
-  mc_rtc::duration_ms dt_update_planes_;
-  mc_rtc::duration_ms dt_compute_guiTriangles_;
 };

@@ -9,15 +9,10 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
   // robotPolytope_->addToLogger(logger());
   // robotPolytope_->addToGUI(*gui());
   std::set<std::string> contactNames = {"LeftFoot", "RightFoot", "LeftHand", "RightHand"};
-  DCMPoly_ = std::make_shared<DynamicPolytope>(robot().name(), contactNames);
+  DCMPoly_ = std::make_shared<DynamicPolytope>(robot().name(), contactNames, robot());
   DCMPoly_->load(config("DynamicPolytope")("mainRobot"));
   DCMPoly_->addToGUI(*gui(), 0.003);
-
-  logger().addLogEntry("dt_totalLoop", this, [this]() { return dt_loop_total().count(); });
-  logger().addLogEntry("dt_contactSet", this, [this]() { return dt_contactSet().count(); });
-  logger().addLogEntry("dt_minkSum", this, [this]() { return dt_minkSum().count(); });
-  logger().addLogEntry("dt_updatePlanes", this, [this]() { return dt_updatePlanes().count(); });
-  logger().addLogEntry("dt_guiTriangles", this, [this]() { return dt_guiTriangles().count(); });
+  DCMPoly_->addToLogger(logger());
 
   wallPose_ = robot("wall").posW();
   wallPose_.translation() += Eigen::Vector3d(-0.05, 0.4, 1.1);
@@ -45,28 +40,23 @@ bool PolytopeController::run()
   {
     contactNames.emplace_back(contact.r1Surface()->name());
   }
-  DCMPoly_->setCurrentContacts(contactNames);
-
-  auto start_loop = mc_rtc::clock::now();
+  DCMPoly_->setControllerContacts(contactNames);
 
   //----------------- politopix calculations
-  DCMPoly_->computeConesFromContactSet(robot());
-  dt_compute_contactSet_ = mc_rtc::clock::now() - start_loop;
-  auto start_minkSum = mc_rtc::clock::now();
-  DCMPoly_->computeMinkowskySumPolitopix();
-  dt_compute_minkSum_ = mc_rtc::clock::now() - start_minkSum;
+  // DCMPoly_->computeConesFromContactSet(robot());
+
+  // DCMPoly_->computeMinkowskySumPolitopix();
+
   DCMPoly_->computeECMP(robot());
-  DCMPoly_->computeECMPRegion(robot().com(), robot()); // XXX not ok for 6d polytopes
-  DCMPoly_->computeZMPRegion(robot().com(), robot());
-  DCMPoly_->computeZeroMomentIntersection();
+  // DCMPoly_->computeECMPRegion(robot().com(), robot()); // XXX not ok for 6d polytopes
+  // DCMPoly_->computeZMPRegion(robot().com(), robot());
+  // DCMPoly_->computeZeroMomentIntersection();
   // DCMPoly_->computeMomentsRegion(robot().com(), robot());
-  auto start_updatePlanes = mc_rtc::clock::now();
+
   DCMPoly_->updateECMPPlanes(eCMPPlanesNormals_, eCMPPlanesOffsets_);
-  dt_update_planes_ = mc_rtc::clock::now() - start_updatePlanes;
-  auto start_guiTriangles = mc_rtc::clock::now();
-  DCMPoly_->updateTrianglesGUIPolitopix();
-  dt_compute_guiTriangles_ = mc_rtc::clock::now() - start_guiTriangles;
-  dt_loop_total_ = mc_rtc::clock::now() - start_loop;
+
+  // DCMPoly_->updateTrianglesGUIPolitopix();
+
   // cdd calculations
   // TODO
 
