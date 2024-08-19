@@ -40,25 +40,13 @@ bool PolytopeController::run()
   {
     contactNames.emplace_back(contact.r1Surface()->name());
   }
+  // set the current controller contacts for computations
   DCMPoly_->setControllerContacts(contactNames);
 
-  //----------------- politopix calculations
-  // DCMPoly_->computeConesFromContactSet(robot());
-
-  // DCMPoly_->computeMinkowskySumPolitopix();
-
   DCMPoly_->computeECMP(robot());
-  // DCMPoly_->computeECMPRegion(robot().com(), robot()); // XXX not ok for 6d polytopes
-  // DCMPoly_->computeZMPRegion(robot().com(), robot());
-  // DCMPoly_->computeZeroMomentIntersection();
-  // DCMPoly_->computeMomentsRegion(robot().com(), robot());
+  // get the planes to constraint or use in the controller (will be empty in the first iterations)
+  DCMPoly_->getECMPPlanes(eCMPPlanesNormals_, eCMPPlanesOffsets_);
 
-  DCMPoly_->updateECMPPlanes(eCMPPlanesNormals_, eCMPPlanesOffsets_);
-
-  // DCMPoly_->updateTrianglesGUIPolitopix();
-
-  // cdd calculations
-  // TODO
 
   return mc_control::fsm::Controller::run();
 }
