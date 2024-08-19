@@ -1,4 +1,6 @@
 #include "PolytopeController.h"
+#include <mc_dynamic_polytopes/SupportRegion.h>
+
 
 PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, const mc_rtc::Configuration & config)
 : mc_control::fsm::Controller(rm, dt, config)
@@ -12,14 +14,13 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
   DCMPoly_ = std::make_shared<DynamicPolytope>(robot().name(), contactNames, robot());
   DCMPoly_->load(config("DynamicPolytope")("mainRobot"));
   DCMPoly_->addToGUI(*gui(), 0.003);
-  DCMPoly_->addToLogger(logger());
+  DCMPoly_->addToLogger(logger(),"perf");
 
   wallPose_ = robot("wall").posW();
   wallPose_.translation() += Eigen::Vector3d(-0.05, 0.4, 1.1);
   gui()->addElement({"Wall"}, mc_rtc::gui::Transform(
                                   "centre", [this]() -> const sva::PTransformd & { return wallPose_; },
                                   [this](const sva::PTransformd & p) { wallPose_ = p; })
-
   );
 
   mc_rtc::log::success("PolytopeController init done ");
@@ -41,6 +42,7 @@ bool PolytopeController::run()
     contactNames.emplace_back(contact.r1Surface()->name());
   }
   // set the current controller contacts for computations
+  DCMPoly_->setControllerContacts(solver().contacts());
   DCMPoly_->setControllerContacts(contactNames);
 
   DCMPoly_->computeECMP(robot());
