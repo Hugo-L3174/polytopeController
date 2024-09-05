@@ -1,14 +1,21 @@
 #include "PolytopeController.h"
+#include <mc_tasks/MetaTaskLoader.h>
 
 PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, const mc_rtc::Configuration & config)
 : mc_control::fsm::Controller(rm, dt, config)
 {
+  datastore().make_call(
+      "KinematicAnchorFrame::" + robot().name(), [this](const mc_rbdyn::Robot & robot)
+      { return sva::interpolate(robot.surfacePose("LeftFootCenter"), robot.surfacePose("RightFootCenter"), 0.5); });
+
+  DCMTask_ = mc_tasks::MetaTaskLoader::load<mc_tasks::DCM_VRP::DCM_VRPTask>(solver(), config("DCM_VRPTask"));
+  solver().addTask(DCMTask_);
   // initialize stabiliplus polytope object
   // robotPolytope_ = std::make_shared<MCStabilityPolytope>(robot().name());
   // robotPolytope_->load(config("StabilityPolytope")(robot().name()));
   // robotPolytope_->addToLogger(logger());
   // robotPolytope_->addToGUI(*gui());
-  std::set<std::string> contactNames = {"LeftFoot", "RightFoot", "LeftHand", "RightHand"};
+  std::set<std::string> contactNames = {"LeftFootCenter", "RightFootCenter", "LeftHand", "RightHand"};
   DCMPoly_ = std::make_shared<DynamicPolytope>(robot().name(), contactNames, robot());
   DCMPoly_->load(config("DynamicPolytope")("mainRobot"));
   DCMPoly_->addToGUI(*gui(), 0.003);
@@ -47,6 +54,10 @@ bool PolytopeController::run()
   // get the planes to constraint or use in the controller (will be empty in the first iterations)
   DCMPoly_->getECMPPlanes(eCMPPlanesNormals_, eCMPPlanesOffsets_);
 
+  for (auto & contact : contactNames)
+  {
+    DCMTask_->setForceConesPlanes(contact, DCMPoly_->getConePlanes(contact));
+  }
 
   return mc_control::fsm::Controller::run();
 }

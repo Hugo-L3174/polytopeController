@@ -20,6 +20,7 @@ target_link_libraries(${PROJECT_NAME}
   Stabiliplus::StabilityPolytope
   sch-core::sch-core
   mc_dynamic_polytopes::DynamicPolytope
+  DCM_VRPTask::mc_tasks_DCM_VRPTask
   # eigen-cdd::eigen-cdd
   )
 install(TARGETS ${PROJECT_NAME}

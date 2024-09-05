@@ -38,11 +38,21 @@ collisions:
 # Initial set of contacts
 contacts:
 - r2: ground
-  r1Surface: LeftFoot
+  r1Surface: LeftFootCenter
   r2Surface: AllGround
+  dof: [0.0, 0.0, 1.0, 1.0, 1.0, 0.0]
 - r2: ground
-  r1Surface: RightFoot
+  r1Surface: RightFootCenter
   r2Surface: AllGround
+  dof: [0.0, 0.0, 1.0, 1.0, 1.0, 0.0]
+
+DCM_VRPTask:
+  type: DCM-VRP
+  possibleContacts: [RightFootCenter, LeftFootCenter, RightHand]
+  robotMass:
+    rhps1: 61.264
+    hrp4: 35.178
+    rhps1_plate_plate: 59.358
 
 # Some options for a specific robot
 jvrc1:
@@ -70,16 +80,16 @@ states:
           offset_rotation: [0.0, -1.57, 0.0]
         completion:
           eval: 0.01
-      CoM:
-        type: com
-        above: [LeftFoot, RightFoot]
-        weight: 2000
-        stiffness: 5
+      # CoM:
+      #   type: com
+      #   above: [LeftFoot, RightFoot]
+      #   weight: 2000
+      #   stiffness: 5
     AddContactsAfter:
-      - r1: hrp4
-        r2: wall
+      - r2: wall
         r1Surface: RightHand
         r2Surface: Door
+        dof: [0.0, 0.0, 1.0, 1.0, 1.0, 0.0]
 
 
 
@@ -90,6 +100,24 @@ transitions:
 # Initial state
 init: PolytopeController_Initial
 
+ObserverPipelines:
+- name: MainRobPipeline                    # - Create a new pipeline
+  gui: true                              #   diplay the pipeline in the GUI (default = false)
+  log: true                              #   log observers (default)
+  observers:                             #   declare which observers to use
+  - type: Encoder                        # - Use an EncoderObserver
+    config:
+      position: encoderValues            #    - Sets joint position from encoder sensor values (default)
+      velocity: encoderFiniteDifferences #    - Computes joint velocities by finite differences  (default)
+      computeFV: true                    # We now have the estimation of each joint position and velocity and the corresponding body positions and velocities, but we are still missing the floating base
+  - type: Attitude
+    config:
+      bodySensor: Accelerometer
+  - type: KinematicInertial              # - Estimates the floating base state using the KinematicInertial observer
+    update: true                         #   update the real robot instance from its results
+    gui: true                            #   Displays the estimated velocity as an arrow (default)
+    config:
+      bodySensor: Accelerometer          # This observer only uses roll and pitch rotation information from this sensor along with a kinematic anchor point and the robot kinematics between the anchor frame and the floating base frame. 
 
 DynamicPolytope:
   mainRobot:

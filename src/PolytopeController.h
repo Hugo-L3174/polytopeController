@@ -5,6 +5,7 @@
 
 #include "utils/MCStabilityPolytope.h"
 #include <mc_dynamic_polytopes/DynamicPolytope.h>
+#include <mc_tasks/DCM_VRPTask.h>
 
 #include "api.h"
 
@@ -31,6 +32,8 @@ private:
 
   // mc_dynamic_polytopes element
   std::shared_ptr<DynamicPolytope> DCMPoly_;
+
+  std::shared_ptr<mc_tasks::DCM_VRP::DCM_VRPTask> DCMTask_;
 
   // planes normals and offsets for eCMP region testing and constraint
   Eigen::MatrixX3d eCMPPlanesNormals_;
