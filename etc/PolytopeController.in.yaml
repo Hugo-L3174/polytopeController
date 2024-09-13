@@ -117,7 +117,7 @@ ObserverPipelines:
     update: true                         #   update the real robot instance from its results
     gui: true                            #   Displays the estimated velocity as an arrow (default)
     config:
-      bodySensor: Accelerometer          # This observer only uses roll and pitch rotation information from this sensor along with a kinematic anchor point and the robot kinematics between the anchor frame and the floating base frame. 
+      bodySensor: Accelerometer          # This observer only uses roll and pitch rotation information from this sensor along with a kinematic anchor point and the robot kinematics between the anchor frame and the floating base frame.
 
 DynamicPolytope:
   mainRobot:

@@ -3,9 +3,9 @@
 #include <mc_control/fsm/Controller.h>
 #include <mc_control/mc_controller.h>
 
+#include <mc_tasks/DCM_VRPTask.h>
 #include "utils/MCStabilityPolytope.h"
 #include <mc_dynamic_polytopes/DynamicPolytope.h>
-#include <mc_tasks/DCM_VRPTask.h>
 
 #include "api.h"
 

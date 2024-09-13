@@ -50,11 +50,10 @@ bool PolytopeController::run()
   // set the current controller contacts for computations
   DCMPoly_->setControllerContacts(contactNames);
 
-  DCMPoly_->computeECMP(robot());
   // get the planes to constraint or use in the controller (will be empty in the first iterations)
-  DCMPoly_->getECMPPlanes(eCMPPlanesNormals_, eCMPPlanesOffsets_);
+  DCMTask_->setDCMPoly(DCMPoly_->getVRPPlanes());
 
-  for (auto & contact : contactNames)
+  for(auto & contact : contactNames)
   {
     DCMTask_->setForceConesPlanes(contact, DCMPoly_->getConePlanes(contact));
   }
