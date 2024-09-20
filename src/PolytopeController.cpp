@@ -40,22 +40,28 @@ bool PolytopeController::run()
   // XXX updating posW does not seem to update the contact constraints?
   // robot("wall").posW(pos);
 
-  // get list of the current contact names
-  auto contacts = solver().contacts();
-  std::vector<std::string> contactNames;
-  for(auto contact : contacts)
+  // get list of the current contacts
+  auto ctlContacts = solver().contacts();
+  std::vector<std::pair<std::string, sva::PTransformd>> contacts;
+  for(auto contact : ctlContacts)
   {
-    contactNames.emplace_back(contact.r1Surface()->name());
+    // emplacing X_0_s of target surface: will define orientation of friction cone
+    // XXX NOT sufficient ! will only be the second robot world frame, not necessarily the contact frame
+    // TODO take offset into account
+    contacts.emplace_back(contact.r1Surface()->name(), contact.r2Surface()->X_0_s(robots().robot(contact.r2Index())));
+    // mc_rtc::log::info("Target transform for contact {} is\n {}", contact.r1Surface()->name(),
+    //                   contact.r2Surface()->X_0_s(robots().robot(contact.r2Index())).rotation());
   }
   // set the current controller contacts for computations
-  DCMPoly_->setControllerContacts(contactNames);
+  DCMPoly_->setControllerContacts(contacts);
 
   // get the planes to constraint or use in the controller (will be empty in the first iterations)
   DCMTask_->setDCMPoly(DCMPoly_->getVRPPlanes());
+  // DCMTask_->setDCMPoly(DCMPoly_->getZeroMomentPlanes());
 
-  for(auto & contact : contactNames)
+  for(auto & contact : contacts)
   {
-    DCMTask_->setForceConesPlanes(contact, DCMPoly_->getConePlanes(contact));
+    DCMTask_->setForceConesPlanes(contact.first, DCMPoly_->getConePlanes(contact.first));
   }
 
   return mc_control::fsm::Controller::run();
