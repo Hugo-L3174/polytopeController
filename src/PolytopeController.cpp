@@ -4,9 +4,10 @@
 PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, const mc_rtc::Configuration & config)
 : mc_control::fsm::Controller(rm, dt, config)
 {
-  datastore().make_call(
-      "KinematicAnchorFrame::" + robot().name(), [this](const mc_rbdyn::Robot & robot)
-      { return sva::interpolate(robot.surfacePose("LeftFootCenter"), robot.surfacePose("RightFootCenter"), 0.5); });
+  datastore().make_call("KinematicAnchorFrame::" + robot().name(),
+                        [this](const mc_rbdyn::Robot & robot) {
+                          return sva::interpolate(robot.surfacePose("LeftFoot"), robot.surfacePose("RightFoot"), 0.5);
+                        });
 
   DCMTask_ = mc_tasks::MetaTaskLoader::load<mc_tasks::DCM_VRP::DCM_VRPTask>(solver(), config("DCM_VRPTask"));
   solver().addTask(DCMTask_);
@@ -15,10 +16,10 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
   // robotPolytope_->load(config("StabilityPolytope")(robot().name()));
   // robotPolytope_->addToLogger(logger());
   // robotPolytope_->addToGUI(*gui());
-  std::set<std::string> contactNames = {"LeftFootCenter", "RightFootCenter", "LeftHand", "RightHand"};
+  std::set<std::string> contactNames = {"LeftFoot", "RightFoot", "LeftHand", "RightHand"};
   DCMPoly_ = std::make_shared<DynamicPolytope>(robot().name(), contactNames, robot());
   DCMPoly_->load(config("DynamicPolytope")("mainRobot"));
-  DCMPoly_->addToGUI(*gui(), 0.003);
+  DCMPoly_->addToGUI(*gui(), 0.001);
   DCMPoly_->addToLogger(logger());
 
   wallPose_ = robot("wall").posW();
@@ -57,7 +58,7 @@ bool PolytopeController::run()
 
   // get the planes to constraint or use in the controller (will be empty in the first iterations)
   DCMTask_->setDCMPoly(DCMPoly_->getVRPPlanes());
-  // DCMTask_->setDCMPoly(DCMPoly_->getZeroMomentPlanes());
+  DCMTask_->setZeroMomentPoly(DCMPoly_->getZeroMomentPlanes());
 
   for(auto & contact : contacts)
   {

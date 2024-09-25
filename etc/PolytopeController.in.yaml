@@ -38,17 +38,17 @@ collisions:
 # Initial set of contacts
 contacts:
 - r2: ground
-  r1Surface: LeftFootCenter
+  r1Surface: LeftFoot
   r2Surface: AllGround
   dof: [0.0, 0.0, 1.0, 1.0, 1.0, 0.0]
 - r2: ground
-  r1Surface: RightFootCenter
+  r1Surface: RightFoot
   r2Surface: AllGround
   dof: [0.0, 0.0, 1.0, 1.0, 1.0, 0.0]
 
 DCM_VRPTask:
   type: DCM-VRP
-  possibleContacts: [RightFootCenter, LeftFootCenter, RightHand]
+  possibleContacts: [RightFoot, LeftFoot, RightHand]
   robotMass:
     rhps1: 61.264
     hrp4: 35.178
