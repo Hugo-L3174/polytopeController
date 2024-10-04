@@ -26,6 +26,7 @@ struct PolytopeController_DLLAPI PolytopeController : public mc_control::fsm::Co
 
 private:
   sva::PTransformd wallPose_;
+  sva::PTransformd robotDCMtarget_;
   bool firstPolyOK_ = false;
 
   // stabiliplus elements

@@ -30,6 +30,13 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
 
   );
 
+  robotDCMtarget_ = robot().com();
+  gui()->addElement({"Robot"}, mc_rtc::gui::Transform(
+                                   "DCMobjective", [this]() -> const sva::PTransformd & { return robotDCMtarget_; },
+                                   [this](const sva::PTransformd & p) { robotDCMtarget_ = p; })
+
+  );
+
   mc_rtc::log::success("PolytopeController init done ");
 }
 
@@ -53,6 +60,9 @@ bool PolytopeController::run()
                           contact.r1Surface()->X_0_s(realRobots().robot(contact.r1Index())).inv());
     // contacts.emplace_back(contact.r1Surface()->name(), contact.compute_X_r2s_r1s(robots()).inv());
   }
+
+  DCMTask_->setDCMTarget(robotDCMtarget_.translation());
+
   // set the current controller contacts for computations
   DCMPoly_->setControllerContacts(contacts);
 
