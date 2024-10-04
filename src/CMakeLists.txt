@@ -1,13 +1,13 @@
 set(controller_SRC
   PolytopeController.cpp
-  utils/MCStabilityPolytope.cpp
-  utils/PointProjector.cpp
+  # utils/MCStabilityPolytope.cpp
+  # utils/PointProjector.cpp
 )
 
 set(controller_HDR
   PolytopeController.h
-  utils/MCStabilityPolytope.h
-  utils/PointProjector.h
+  # utils/MCStabilityPolytope.h
+  # utils/PointProjector.h
 )
 
 
@@ -16,8 +16,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DPolytopeContro
 target_link_libraries(${PROJECT_NAME}
   PUBLIC
   mc_rtc::mc_control_fsm
-  Stabiliplus::ProblemDescriptor
-  Stabiliplus::StabilityPolytope
+  # Stabiliplus::ProblemDescriptor
+  # Stabiliplus::StabilityPolytope
   sch-core::sch-core
   mc_dynamic_polytopes::DynamicPolytope
   DCM_VRPTask::mc_tasks_DCM_VRPTask

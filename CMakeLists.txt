@@ -12,7 +12,7 @@ project(${PROJECT_NAME} CXX)
 # Check if the project is built inside mc_rtc
 if(NOT TARGET mc_rtc::mc_control)
   find_package(mc_rtc REQUIRED)
-  find_package(Stabiliplus REQUIRED)
+  # find_package(Stabiliplus REQUIRED)
   find_package(sch-core REQUIRED)
   find_package(mc_dynamic_polytopes REQUIRED)
   find_package(DCM_VRPTask REQUIRED)

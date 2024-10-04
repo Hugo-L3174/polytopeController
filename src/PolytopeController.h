@@ -4,8 +4,10 @@
 #include <mc_control/mc_controller.h>
 
 #include <mc_tasks/DCM_VRPTask.h>
-#include "utils/MCStabilityPolytope.h"
+// #include "utils/MCStabilityPolytope.h"
 #include <mc_dynamic_polytopes/DynamicPolytope.h>
+
+#include <eigen-quadprog/QuadProg.h>
 
 #include "api.h"
 
@@ -20,15 +22,15 @@ struct PolytopeController_DLLAPI PolytopeController : public mc_control::fsm::Co
   // legacy function to update the contact set for stabiliplus balance computation
   void updateContactSet(const std::vector<mc_rbdyn::Contact> & contacts, unsigned int robotIndex);
   // legacy function to update mcstabilitypolytope (wrapper for stabiliplus)
-  void updateObjective(MCStabilityPolytope * polytope_, Eigen::Vector3d currentPos, Eigen::Vector3d & objective);
+  // void updateObjective(MCStabilityPolytope * polytope_, Eigen::Vector3d currentPos, Eigen::Vector3d & objective);
 
 private:
   sva::PTransformd wallPose_;
   bool firstPolyOK_ = false;
 
   // stabiliplus elements
-  std::shared_ptr<MCStabilityPolytope> robotPolytope_;
-  std::shared_ptr<ContactSet> contactSet_;
+  // std::shared_ptr<MCStabilityPolytope> robotPolytope_;
+  // std::shared_ptr<ContactSet> contactSet_;
 
   // mc_dynamic_polytopes element
   std::shared_ptr<DynamicPolytope> DCMPoly_;
@@ -38,4 +40,6 @@ private:
   // planes normals and offsets for eCMP region testing and constraint
   Eigen::MatrixX3d eCMPPlanesNormals_;
   Eigen::VectorXd eCMPPlanesOffsets_;
+
+  Eigen::QuadProgDense testSolver_;
 };
