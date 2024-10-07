@@ -49,9 +49,8 @@ bool PolytopeController::run()
   // robot("wall").posW(pos);
 
   // get list of the current contacts
-  auto ctlContacts = solver().contacts();
   std::vector<std::pair<std::string, sva::PTransformd>> contacts;
-  for(auto contact : ctlContacts)
+  for(const auto & contact : solver().contacts())
   {
     // emplacing X_0_s of target surface: will define orientation of friction cone
     // XXX NOT sufficient ! will only be the second robot world frame, not necessarily the contact frame
@@ -72,9 +71,12 @@ bool PolytopeController::run()
 
   for(auto & contact : contacts)
   {
-    DCMTask_->setForceConesPlanes(contact.first, DCMPoly_->getConePlanes(contact.first));
+    DCMTask_->setContactPlanes(contact.first, DCMPoly_->getForcePolyPlanes(contact.first));
   }
 
+  Eigen::Vector3d direction{0., 1., 0.};
+  // mc_rtc::log::critical("Solution vrep is {}", supportVdesc(direction).transpose());
+  // mc_rtc::log::critical("Solution hrep is {}", supportHdesc(direction, testSolver_).transpose());
   return mc_control::fsm::Controller::run();
 }
 
