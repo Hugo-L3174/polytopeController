@@ -1,3 +1,4 @@
 add_fsm_state_simple(PolytopeController_Initial)
+add_fsm_state_simple(EstimateMass)
 
 add_fsm_data_directory(data)

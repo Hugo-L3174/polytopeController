@@ -59,17 +59,19 @@ bool PolytopeController::run()
                           contact.r1Surface()->X_0_s(realRobots().robot(contact.r1Index())).inv());
     // contacts.emplace_back(contact.r1Surface()->name(), contact.compute_X_r2s_r1s(robots()).inv());
   }
+  controllerContacts_ = contacts;
 
   DCMTask_->setDCMTarget(robotDCMtarget_.translation());
 
   // set the current controller contacts for computations
-  DCMPoly_->setControllerContacts(contacts);
+  DCMPoly_->setControllerContacts(controllerContacts_);
+  // DCMPoly_->setControllerContactsRBDyn(solver().contacts());
 
   // get the planes to constraint or use in the controller (will be empty in the first iterations)
   DCMTask_->setDCMPoly(DCMPoly_->getVRPPlanes());
   DCMTask_->setZeroMomentPoly(DCMPoly_->getZeroMomentPlanes());
 
-  for(auto & contact : contacts)
+  for(auto & contact : controllerContacts_)
   {
     DCMTask_->setContactPlanes(contact.first, DCMPoly_->getForcePolyPlanes(contact.first));
   }

@@ -95,10 +95,11 @@ states:
 
 # Transitions map
 transitions:
+- [EstimateMass, OK, PolytopeController_Initial, Auto]
 - [PolytopeController_Initial, OK, ContactWall, Strict]
 - [ContactWall, OK, Pause, Strict]
 # Initial state
-init: PolytopeController_Initial
+init: EstimateMass
 
 ObserverPipelines:
 - name: MainRobPipeline                    # - Create a new pipeline
