@@ -2,10 +2,9 @@
 
 #include "../PolytopeController.h"
 
-
 void EstimateMass::configure(const mc_rtc::Configuration & config) {}
 
-void EstimateMass::start(mc_control::fsm::Controller & ctl_) 
+void EstimateMass::start(mc_control::fsm::Controller & ctl_)
 {
   iterationCounter_ = 0;
   appliedWrenches_ = sva::ForceVecd::Zero();
@@ -23,11 +22,10 @@ bool EstimateMass::run(mc_control::fsm::Controller & ctl_)
     auto contactWrench = ctl.realRobot().indirectSurfaceForceSensor(contact.first).wrench();
     // computing contact wrench back into CoM frame
     appliedWrenches_ += X_r_C.dualMul(contactWrench);
-
   }
 
   iterationCounter_++;
-  if (iterationCounter_ < 100)
+  if(iterationCounter_ < 100)
   {
     return false;
   }
@@ -40,7 +38,6 @@ bool EstimateMass::run(mc_control::fsm::Controller & ctl_)
     output("OK");
     return true;
   }
-  
 }
 
 void EstimateMass::teardown(mc_control::fsm::Controller & ctl_)

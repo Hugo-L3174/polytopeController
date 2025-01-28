@@ -28,6 +28,7 @@ private:
   sva::PTransformd wallPose_;
   sva::PTransformd robotDCMtarget_;
   bool firstPolyOK_ = false;
+
 public:
   std::vector<std::pair<std::string, sva::PTransformd>> controllerContacts_;
   // stabiliplus elements
@@ -38,6 +39,7 @@ public:
   std::shared_ptr<DynamicPolytope> DCMPoly_;
 
   std::shared_ptr<mc_tasks::DCM_VRP::DCM_VRPTask> DCMTask_;
+
 private:
   // planes normals and offsets for eCMP region testing and constraint
   Eigen::MatrixX3d eCMPPlanesNormals_;
