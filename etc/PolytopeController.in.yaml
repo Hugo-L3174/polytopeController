@@ -123,7 +123,7 @@ ObserverPipelines:
 DynamicPolytope:
   mainRobot:
     polyhedronForce: &polyhedron
-      triangle_color: [1.0, 0.0, 0.0, 0.4]
+      triangle_color: [1.0, 0.0, 0.0, 0.2]
       show_triangle: true
       use_triangle_color: false
       edges:
@@ -139,30 +139,30 @@ DynamicPolytope:
       fixed_vertices_color: true
     polyhedronMoment:
       <<: *polyhedron
-      triangle_color: [0.0, 0.0, 1.0, 0.4]
+      triangle_color: [0.0, 0.0, 1.0, 0.2]
     polyhedronZMP:
       <<: *polyhedron
-      triangle_color: [0.0, 1.0, 0.0, 0.4]
+      triangle_color: [0.0, 1.0, 0.0, 0.2]
     polyhedronZeroMomentArea:
       <<: *polyhedron
-      triangle_color: [0.7, 0.3, 0.0, 0.4]
+      triangle_color: [0.7, 0.3, 0.0, 0.2]
     withMoments: false
   human:
     polyhedronForce:
       <<: *polyhedron
-      triangle_color: [0.0, 1.0, 0.0, 0.4]
+      triangle_color: [0.0, 1.0, 0.0, 0.2]
     polyhedronMoment:
       <<: *polyhedron
-      triangle_color: [1.0, 0.0, 0.0, 0.4]
+      triangle_color: [1.0, 0.0, 0.0, 0.2]
   e2dr:
     polyhedronForce:
       <<: *polyhedron
     polyhedronMoment:
       <<: *polyhedron
-      triangle_color: [0.0, 0.0, 1.0, 0.3]
+      triangle_color: [0.0, 0.0, 1.0, 0.2]
   rhps1:
     polyhedronForce:
       <<: *polyhedron
     polyhedronMoment:
       <<: *polyhedron
-      triangle_color: [0.0, 0.0, 1.0, 0.4]
+      triangle_color: [0.0, 0.0, 1.0, 0.2]
