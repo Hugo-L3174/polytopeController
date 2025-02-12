@@ -52,12 +52,10 @@ bool PolytopeController::run()
   std::vector<std::pair<std::string, sva::PTransformd>> contacts;
   for(const auto & contact : solver().contacts())
   {
-    // emplacing X_0_s of target surface: will define orientation of friction cone
-    // XXX NOT sufficient ! will only be the second robot world frame, not necessarily the contact frame
+    // emplacing X_r1_r2 between controlled and target contact: will define orientation of friction cone in controlled
+    // frame
     // TODO take offset into account
-    contacts.emplace_back(contact.r1Surface()->name(),
-                          contact.r1Surface()->X_0_s(realRobots().robot(contact.r1Index())).inv());
-    // contacts.emplace_back(contact.r1Surface()->name(), contact.compute_X_r2s_r1s(robots()).inv());
+    contacts.emplace_back(contact.r1Surface()->name(), contact.compute_X_r2s_r1s(realRobots()).inv());
   }
   controllerContacts_ = contacts;
 
