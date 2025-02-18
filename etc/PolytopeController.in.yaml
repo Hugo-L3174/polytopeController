@@ -49,10 +49,36 @@ contacts:
 DCM_VRPTask:
   type: DCM-VRP
   possibleContacts: [RightFoot, LeftFoot, RightHand]
+  withPolytopeConstraints: true
+  withAutoBalance: false
+  zeroMomentAutoBalance: true
+  tracker:
+    P: 10
+    I: 0
+    D: 0
+    # TODO add tracker options
   robotMass:
     rhps1: 61.264
     hrp4: 35.178
     rhps1_plate_plate: 59.358
+  tasks:
+    CoM:
+      weight: 10000
+    Momentum:
+      stiffness: 10
+      weight: 100000
+      dimWeight: [1, 1, 1, 0, 0, 0]
+    CoP:
+      admittance:
+        couple: [0.03, 0.03, 0.]
+        force: [0.001, 0.001, 0.0002]
+      stiffness: 5
+      damping: 150
+      weight: 100000
+      maxVel:
+        angular: [3., 3., 3.]
+        linear: [1., 1., 1.]
+
 
 # Some options for a specific robot
 jvrc1:
@@ -147,6 +173,7 @@ DynamicPolytope:
       <<: *polyhedron
       triangle_color: [0.7, 0.3, 0.0, 0.2]
     withMoments: false
+    computeRegions: false
   human:
     polyhedronForce:
       <<: *polyhedron
