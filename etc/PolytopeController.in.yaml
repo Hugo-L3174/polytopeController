@@ -79,6 +79,37 @@ DCM_VRPTask:
         angular: [3., 3., 3.]
         linear: [1., 1., 1.]
 
+DynamicPolytope:
+  mainRobot:
+    possibleContacts: [RightFoot, LeftFoot, RightHand]
+    withMoments: false
+    computeRegions: false
+    gui:
+      polyhedronForce: &polyhedron
+        triangle_color: [1.0, 0.0, 0.0, 0.2]
+        show_triangle: true
+        use_triangle_color: false
+        edges:
+          color: [0.75, 0.75, 0.75, 1.0]
+          width: 0.003
+          style: solid
+        show_edges: false
+        fixed_edge_color: true
+        vertices:
+          color: [1.0, 0.0, 0.0, 1.0]
+          scale: 0.02
+        show_vertices: false
+        fixed_vertices_color: true
+      polyhedronMoment:
+        <<: *polyhedron
+        triangle_color: [0.0, 0.0, 1.0, 0.2]
+      polyhedronZMP:
+        <<: *polyhedron
+        triangle_color: [0.0, 1.0, 0.0, 0.2]
+      polyhedronZeroMomentArea:
+        <<: *polyhedron
+        triangle_color: [0.7, 0.3, 0.0, 0.2]
+
 
 # Some options for a specific robot
 jvrc1:
@@ -145,51 +176,3 @@ ObserverPipelines:
     gui: true                            #   Displays the estimated velocity as an arrow (default)
     config:
       bodySensor: Accelerometer          # This observer only uses roll and pitch rotation information from this sensor along with a kinematic anchor point and the robot kinematics between the anchor frame and the floating base frame.
-
-DynamicPolytope:
-  mainRobot:
-    polyhedronForce: &polyhedron
-      triangle_color: [1.0, 0.0, 0.0, 0.2]
-      show_triangle: true
-      use_triangle_color: false
-      edges:
-        color: [0.75, 0.75, 0.75, 1.0]
-        width: 0.003
-        style: solid
-      show_edges: false
-      fixed_edge_color: true
-      vertices:
-        color: [1.0, 0.0, 0.0, 1.0]
-        scale: 0.02
-      show_vertices: false
-      fixed_vertices_color: true
-    polyhedronMoment:
-      <<: *polyhedron
-      triangle_color: [0.0, 0.0, 1.0, 0.2]
-    polyhedronZMP:
-      <<: *polyhedron
-      triangle_color: [0.0, 1.0, 0.0, 0.2]
-    polyhedronZeroMomentArea:
-      <<: *polyhedron
-      triangle_color: [0.7, 0.3, 0.0, 0.2]
-    withMoments: false
-    computeRegions: false
-  human:
-    polyhedronForce:
-      <<: *polyhedron
-      triangle_color: [0.0, 1.0, 0.0, 0.2]
-    polyhedronMoment:
-      <<: *polyhedron
-      triangle_color: [1.0, 0.0, 0.0, 0.2]
-  e2dr:
-    polyhedronForce:
-      <<: *polyhedron
-    polyhedronMoment:
-      <<: *polyhedron
-      triangle_color: [0.0, 0.0, 1.0, 0.2]
-  rhps1:
-    polyhedronForce:
-      <<: *polyhedron
-    polyhedronMoment:
-      <<: *polyhedron
-      triangle_color: [0.0, 0.0, 1.0, 0.2]

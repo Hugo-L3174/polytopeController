@@ -16,9 +16,7 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
   // robotPolytope_->load(config("StabilityPolytope")(robot().name()));
   // robotPolytope_->addToLogger(logger());
   // robotPolytope_->addToGUI(*gui());
-  std::set<std::string> contactNames = {"LeftFoot", "RightFoot", "LeftHand", "RightHand"};
-  DCMPoly_ = std::make_shared<DynamicPolytope>(robot().name(), contactNames, robot());
-  DCMPoly_->load(config("DynamicPolytope")("mainRobot"));
+  DCMPoly_ = std::make_shared<DynamicPolytope>(robot().name(), robot(), config("DynamicPolytope")("mainRobot"));
   DCMPoly_->addToGUI(*gui(), 0.001);
   DCMPoly_->addToLogger(logger());
 
