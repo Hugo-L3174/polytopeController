@@ -60,13 +60,16 @@ DCM_VRPTask:
   robotMass:
     rhps1: 61.264
     hrp4: 35.178
-    rhps1_plate_plate: 59.358
+    rhps1_plate_plate: 59.401
   tasks:
     CoM:
       weight: 10000
     Momentum:
-      stiffness: 10
-      weight: 100000
+      # Ideally we want 0 stiffness and only track Ldot (damping)
+      # For now since we want static we still target 0 momentum (stiffness)
+      stiffness: [3, 3, 5, 0, 0, 0]
+      damping: [3, 3, 5, 0, 0, 0]
+      weight: 10000
       dimWeight: [1, 1, 1, 0, 0, 0]
     CoP:
       admittance:
