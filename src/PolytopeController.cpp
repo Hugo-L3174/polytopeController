@@ -1,5 +1,6 @@
 #include "PolytopeController.h"
 #include <mc_tasks/MetaTaskLoader.h>
+#include <optional>
 
 PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, const mc_rtc::Configuration & config)
 : mc_control::fsm::Controller(rm, dt, config, {mc_solver::QPSolver::Backend::TVM})
@@ -72,7 +73,10 @@ bool PolytopeController::run()
 
   for(auto & contact : controllerContacts_)
   {
-    DCMTask_->setContactPlanes(contact.first, DCMPoly_->getForcePolyPlanes(contact.first));
+    const auto & feasiblePolytope = DCMPoly_->getForcePolyPlanes(contact.first);
+    auto polytope = std::make_optional<mc_rbdyn::FeasiblePolytope>({feasiblePolytope.first, feasiblePolytope.second});
+    DCMTask_->setContactPlanes(contact.first, feasiblePolytope);
+    addContact({robot().name(), "ground", contact.first, "AllGround", 0.5, Eigen::Vector6d::Zero(), polytope}, false);
   }
 
   return mc_control::fsm::Controller::run();

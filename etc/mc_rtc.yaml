@@ -1,0 +1,3 @@
+MainRobot: "HRP4::ImpactGrippers::MuJoCo"
+Enabled: PolytopeController
+Timestep: 0.005
