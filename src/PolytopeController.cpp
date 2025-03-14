@@ -2,7 +2,7 @@
 #include <mc_tasks/MetaTaskLoader.h>
 
 PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, const mc_rtc::Configuration & config)
-: mc_control::fsm::Controller(rm, dt, config)
+: mc_control::fsm::Controller(rm, dt, config, {mc_solver::QPSolver::Backend::TVM})
 {
   datastore().make_call("KinematicAnchorFrame::" + robot().name(),
                         [this](const mc_rbdyn::Robot & robot) {
@@ -47,13 +47,15 @@ bool PolytopeController::run()
   // robot("wall").posW(pos);
 
   // get list of the current contacts
-  std::vector<std::pair<std::string, sva::PTransformd>> contacts;
+  std::map<std::string, sva::PTransformd> contacts;
+  std::map<std::string, double> frictions;
   for(const auto & contact : solver().contacts())
   {
     // emplacing X_r1_r2 between controlled and target contact: will define orientation of friction cone in controlled
     // frame
     // TODO take offset into account
-    contacts.emplace_back(contact.r1Surface()->name(), contact.compute_X_r2s_r1s(realRobots()).inv());
+    contacts.emplace(contact.r1Surface()->name(), contact.compute_X_r2s_r1s(realRobots()).inv());
+    frictions.emplace(contact.r1Surface()->name(), contact.friction());
   }
   controllerContacts_ = contacts;
 
@@ -61,6 +63,7 @@ bool PolytopeController::run()
 
   // set the current controller contacts for computations
   DCMPoly_->setControllerContacts(controllerContacts_);
+  DCMPoly_->setContactFrictions(frictions);
   // DCMPoly_->setControllerContactsRBDyn(solver().contacts());
 
   // get the planes to constraint or use in the controller (will be empty in the first iterations)
