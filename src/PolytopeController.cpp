@@ -50,21 +50,28 @@ bool PolytopeController::run()
   // get list of the current contacts
   std::map<std::string, sva::PTransformd> contacts;
   std::map<std::string, double> frictions;
+  std::map<std::string, mc_rbdyn::Contact &> rbdynContacts;
   for(const auto & contact : solver().contacts())
   {
     // emplacing X_r1_r2 between controlled and target contact: will define orientation of friction cone in controlled
     // frame
     // TODO take offset into account
+    // TODO compute a default contact polytope even when there is no contact (transform should be identity then)
+    // This should allow "testing" if there exists a valid distrib by adding one of the unused contacts where it
+    // currently is
+    // Should be extended by mpc but idk if computation is too heavy
     contacts.emplace(contact.r1Surface()->name(), contact.compute_X_r2s_r1s(realRobots()).inv());
     frictions.emplace(contact.r1Surface()->name(), contact.friction());
+    rbdynContacts.emplace(contact.r1Surface()->name(), const_cast<mc_rbdyn::Contact &>(contact));
   }
   controllerContacts_ = contacts;
 
   DCMTask_->setDCMTarget(robotDCMtarget_.translation());
 
   // set the current controller contacts for computations
-  DCMPoly_->setControllerContacts(controllerContacts_);
-  DCMPoly_->setContactFrictions(frictions);
+  // DCMPoly_->setControllerContacts(controllerContacts_);
+  // DCMPoly_->setContactFrictions(frictions);
+  DCMPoly_->setControllerContacts(rbdynContacts);
   // DCMPoly_->setControllerContactsRBDyn(solver().contacts());
 
   // get the planes to constraint or use in the controller (will be empty in the first iterations)
