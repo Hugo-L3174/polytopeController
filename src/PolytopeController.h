@@ -30,7 +30,7 @@ private:
   bool firstPolyOK_ = false;
 
 public:
-  std::map<std::string, sva::PTransformd> controllerContacts_;
+  std::map<std::string, mc_rbdyn::Contact &> controllerContacts_;
   // stabiliplus elements
   // std::shared_ptr<MCStabilityPolytope> robotPolytope_;
   // std::shared_ptr<ContactSet> contactSet_;
