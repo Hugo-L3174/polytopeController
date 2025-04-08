@@ -11,7 +11,8 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
                         });
 
   DCMTask_ = mc_tasks::MetaTaskLoader::load<mc_tasks::DCM_VRP::DCM_VRPTask>(solver(), config("DCM_VRPTask"));
-  solver().addTask(DCMTask_);
+  // XXX Comment task while testing the rest
+  // solver().addTask(DCMTask_);
   // initialize stabiliplus polytope object
   // robotPolytope_ = std::make_shared<MCStabilityPolytope>(robot().name());
   // robotPolytope_->load(config("StabilityPolytope")(robot().name()));
@@ -20,6 +21,10 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
   DCMPoly_ = std::make_shared<DynamicPolytope>(robot().name(), robot(), config("DynamicPolytope")("mainRobot"));
   DCMPoly_->addToGUI(*gui(), 0.001);
   DCMPoly_->addToLogger(logger());
+
+  DCMPoly2_ = std::make_shared<DynamicPolytope>("jvrc1", robot("jvrc1"), config("DynamicPolytope")("jvrc1"));
+  DCMPoly2_->addToGUI(*gui(), 0.001);
+  DCMPoly2_->addToLogger(logger());
 
   wallPose_ = robot("wall").posW();
   wallPose_.translation() += Eigen::Vector3d(-0.05, 0.4, 1.1);
@@ -48,7 +53,8 @@ bool PolytopeController::run()
   // robot("wall").posW(pos);
 
   // get list of the current contacts
-  controllerContacts_.clear();
+  R1Contacts_.clear();
+  R2Contacts_.clear();
   for(const auto & contact : solver().contacts())
   {
     // emplacing X_r1_r2 between controlled and target contact: will define orientation of friction cone in controlled
@@ -60,21 +66,30 @@ bool PolytopeController::run()
     // Should be extended by mpc but idk if computation is too heavy
     if(contact->r1Index() == DCMPoly_->robot().robotIndex())
     {
-      controllerContacts_.emplace(contact->r1Surface()->name(), const_cast<mc_rbdyn::Contact &>(*contact));
+      R1Contacts_.emplace(contact->r1Surface()->name(), const_cast<mc_rbdyn::Contact &>(*contact));
     }
     else if(contact->r2Index() == DCMPoly_->robot().robotIndex())
     {
-      controllerContacts_.emplace(contact->r2Surface()->name(), const_cast<mc_rbdyn::Contact &>(*contact));
+      R1Contacts_.emplace(contact->r2Surface()->name(), const_cast<mc_rbdyn::Contact &>(*contact));
+    }
+    if(contact->r1Index() == DCMPoly2_->robot().robotIndex())
+    {
+      R2Contacts_.emplace(contact->r1Surface()->name(), const_cast<mc_rbdyn::Contact &>(*contact));
+    }
+    else if(contact->r2Index() == DCMPoly2_->robot().robotIndex())
+    {
+      R2Contacts_.emplace(contact->r2Surface()->name(), const_cast<mc_rbdyn::Contact &>(*contact));
     }
   }
 
   // set the current controller contacts for computations
-  DCMPoly_->setControllerContacts(controllerContacts_);
+  DCMPoly_->setControllerContacts(R1Contacts_);
+  DCMPoly2_->setControllerContacts(R2Contacts_);
 
   DCMTask_->setDCMTarget(robotDCMtarget_.translation());
 
   // get the planes to constraint or use in the controller (will be empty in the first iterations)
-  for(auto & contact : controllerContacts_)
+  for(auto & contact : R1Contacts_)
   {
     const auto & feasiblePolytope = DCMPoly_->getForcePolyPlanes(contact.first);
     DCMTask_->setContactPlanes(contact.first, feasiblePolytope);

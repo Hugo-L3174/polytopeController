@@ -14,7 +14,7 @@ bool EstimateMass::run(mc_control::fsm::Controller & ctl_)
 {
   auto & ctl = static_cast<PolytopeController &>(ctl_);
 
-  for(const auto & contact : ctl.controllerContacts_)
+  for(const auto & contact : ctl.R1Contacts_)
   {
     auto X_0_C = sva::PTransformd(ctl.realRobot().com());
     // transform from contact frame to CoM frame (world orientation)
