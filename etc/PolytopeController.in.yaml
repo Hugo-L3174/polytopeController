@@ -31,11 +31,11 @@ robots:
       translation: [1.5, -0.2, 1.0]
       # translation: [1.2, -0.6, 1.0]
       rotation: [0.0, -1.57, 0.0]
-  jvrc1:
-    module: JVRC1
-    init_pos:
-      translation: [0., 1.2, 0.8275]
-      rotation: [0.0, 0.0, -1.570796327]
+  # jvrc1:
+  #   module: JVRC1
+  #   init_pos:
+  #     translation: [0., 1.2, 0.8275]
+  #     rotation: [0.0, 0.0, -1.570796327]
   # box:
   #   module: object/box
   #   init_pos:
@@ -46,10 +46,10 @@ constraints:
 - type: dynamics
   damper: [0.1, 0.01, 0.5]
   # infTorque: true
-- type: dynamics
-  robot: jvrc1
-  damper: [0.1, 0.01, 0.5]
-  # infTorque: true
+# - type: dynamics
+#   robot: jvrc1
+#   damper: [0.1, 0.01, 0.5]
+#   # infTorque: true
 - type: compoundJoint
 # Collision constraint
 collisions:
@@ -60,25 +60,25 @@ contacts:
 - r2: ground
   r1Surface: RightFoot
   r2Surface: AllGround
-  dof: [0.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+  dof: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
   friction: 0.7
 - r2: ground
   r1Surface: LeftFoot
   r2Surface: AllGround
-  dof: [0.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+  dof: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
   friction: 0.7
-- r1: jvrc1
-  r2: ground
-  r1Surface: RightFoot
-  r2Surface: AllGround
-  dof: [0.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-  friction: 0.7
-- r1: jvrc1
-  r2: ground
-  r1Surface: LeftFoot
-  r2Surface: AllGround
-  dof: [0.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-  friction: 0.7
+# - r1: jvrc1
+#   r2: ground
+#   r1Surface: RightFoot
+#   r2Surface: AllGround
+#   dof: [0.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+#   friction: 0.7
+# - r1: jvrc1
+#   r2: ground
+#   r1Surface: LeftFoot
+#   r2Surface: AllGround
+#   dof: [0.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+#   friction: 0.7
 
 
 DCM_VRPTask:
@@ -116,6 +116,18 @@ DCM_VRPTask:
       maxVel:
         angular: [3., 3., 3.]
         linear: [1., 1., 1.]
+
+VRPTask:
+  type: VRP
+  above: [LeftFoot, RightFoot]
+  weight: 100000
+  stiffness: 10
+
+DCMTask:
+  type: DCM
+  above: [LeftFoot, RightFoot]
+  weight: 100000
+  stiffness: 10
 
 DynamicPolytope:
   mainRobot:
@@ -189,6 +201,15 @@ jvrc1:
 # Implement some additional text states
 states:
 
+  SoloVRP:
+    base: MetaTasks
+    tasks:
+      VRPTask:
+        type: VRP
+        above: [LeftFoot, RightFoot]
+        weight: 100000
+        stiffness: 10
+
   ContactWall:
     base: MetaTasks
     tasks:
@@ -226,7 +247,7 @@ states:
         stiffness: 5
         target:
           rotation: [0., -1.57, 1.57]
-          translation: [0.3, 0.7, 1.]
+          translation: [0.3, 0.65, 1.]
           # offset_translation: [-0.05, -0.2, 0.0]
           # offset_rotation: [0.0, -1.57, 0.0]
         completion:
@@ -239,16 +260,16 @@ states:
         stiffness: 5
         target:
           rotation: [0., -1.57, -1.57]
-          translation: [0.3, 0.7, 1.]
+          translation: [0.3, 0.65, 1.]
           # offset_translation: [-0.05, -0.2, 0.0]
           # offset_rotation: [0.0, -1.57, 0.0]
         completion:
           eval: 0.01
       CoMR1:
-        type: com
+        type: VRP
         above: [LeftFoot, RightFoot]
-        weight: 2000
-        stiffness: 5
+        weight: 10000
+        stiffness: 10
       CoMR2:
         type: com
         robot: jvrc1
@@ -268,11 +289,12 @@ states:
 transitions:
 - [EstimateMass, OK, PolytopeController_Initial, Auto]
 # - [PolytopeController_Initial, OK, ContactWall, Strict]
-- [PolytopeController_Initial, OK, TouchHands, Strict]
+- [PolytopeController_Initial, OK, SoloVRP, Auto]
+- [SoloVRP, OK, TouchHands, Strict]
 - [ContactWall, OK, Pause, Strict]
 - [TouchHands, OK, Pause, Strict]
 # Initial state
-init: EstimateMass
+init: PolytopeController_Initial
 
 ObserverPipelines:
 - name: MainRobPipeline                    # - Create a new pipeline

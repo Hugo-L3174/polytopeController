@@ -1,6 +1,5 @@
 #include "PolytopeController.h"
 #include <mc_tasks/MetaTaskLoader.h>
-#include <optional>
 
 PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, const mc_rtc::Configuration & config)
 : mc_control::fsm::Controller(rm, dt, config, {mc_solver::QPSolver::Backend::TVM})
@@ -13,6 +12,13 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
   DCMTask_ = mc_tasks::MetaTaskLoader::load<mc_tasks::DCM_VRP::DCM_VRPTask>(solver(), config("DCM_VRPTask"));
   // XXX Comment task while testing the rest
   // solver().addTask(DCMTask_);
+
+  // DCMFunction_ = mc_tasks::MetaTaskLoader::load<mc_tasks::DCM_VRP::DCMTask>(solver(), config("DCMTask"));
+  // solver().addTask(DCMFunction_);
+
+  // VRPFunction_ = mc_tasks::MetaTaskLoader::load<mc_tasks::DCM_VRP::VRPTask>(solver(), config("VRPTask"));
+  // solver().addTask(VRPFunction_);
+
   // initialize stabiliplus polytope object
   // robotPolytope_ = std::make_shared<MCStabilityPolytope>(robot().name());
   // robotPolytope_->load(config("StabilityPolytope")(robot().name()));
@@ -22,9 +28,9 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
   DCMPoly_->addToGUI(*gui(), 0.001);
   DCMPoly_->addToLogger(logger());
 
-  DCMPoly2_ = std::make_shared<DynamicPolytope>("jvrc1", robot("jvrc1"), config("DynamicPolytope")("jvrc1"));
-  DCMPoly2_->addToGUI(*gui(), 0.001);
-  DCMPoly2_->addToLogger(logger());
+  // DCMPoly2_ = std::make_shared<DynamicPolytope>("jvrc1", robot("jvrc1"), config("DynamicPolytope")("jvrc1"));
+  // DCMPoly2_->addToGUI(*gui(), 0.001);
+  // DCMPoly2_->addToLogger(logger());
 
   wallPose_ = robot("wall").posW();
   wallPose_.translation() += Eigen::Vector3d(-0.05, 0.4, 1.1);
@@ -35,11 +41,10 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
   );
 
   robotDCMtarget_ = robot().com();
-  gui()->addElement({"Robot"}, mc_rtc::gui::Transform(
-                                   "DCMobjective", [this]() -> const sva::PTransformd & { return robotDCMtarget_; },
-                                   [this](const sva::PTransformd & p) { robotDCMtarget_ = p; })
-
-  );
+  // gui()->addElement({"Robot"}, mc_rtc::gui::Transform(
+  //                                  "DCMobjective", [this]() -> const sva::PTransformd & { return robotDCMtarget_; },
+  //                                  [this](const sva::PTransformd & p) { robotDCMtarget_ = p; })
+  // );
 
   mc_rtc::log::success("PolytopeController init done ");
 }
@@ -57,6 +62,8 @@ bool PolytopeController::run()
   R2Contacts_.clear();
   for(const auto & contact : solver().contacts())
   {
+    // forced to do this otherwise never updated
+    contact->compute_X_r2s_r1s(robots());
     // emplacing X_r1_r2 between controlled and target contact: will define orientation of friction cone in controlled
     // frame
     // TODO take offset into account
@@ -72,30 +79,31 @@ bool PolytopeController::run()
     {
       R1Contacts_.emplace(contact->r2Surface()->name(), const_cast<mc_rbdyn::Contact &>(*contact));
     }
-    if(contact->r1Index() == DCMPoly2_->robot().robotIndex())
-    {
-      R2Contacts_.emplace(contact->r1Surface()->name(), const_cast<mc_rbdyn::Contact &>(*contact));
-    }
-    else if(contact->r2Index() == DCMPoly2_->robot().robotIndex())
-    {
-      R2Contacts_.emplace(contact->r2Surface()->name(), const_cast<mc_rbdyn::Contact &>(*contact));
-    }
+    // if(contact->r1Index() == DCMPoly2_->robot().robotIndex())
+    // {
+    //   R2Contacts_.emplace(contact->r1Surface()->name(), const_cast<mc_rbdyn::Contact &>(*contact));
+    // }
+    // else if(contact->r2Index() == DCMPoly2_->robot().robotIndex())
+    // {
+    //   R2Contacts_.emplace(contact->r2Surface()->name(), const_cast<mc_rbdyn::Contact &>(*contact));
+    // }
   }
 
   // set the current controller contacts for computations
   DCMPoly_->setControllerContacts(R1Contacts_);
-  DCMPoly2_->setControllerContacts(R2Contacts_);
+  // DCMPoly2_->setControllerContacts(R2Contacts_);
 
   DCMTask_->setDCMTarget(robotDCMtarget_.translation());
+  // VRPFunction_->targetDCM(robotDCMtarget_.translation());
 
   // get the planes to constraint or use in the controller (will be empty in the first iterations)
-  for(auto & contact : R1Contacts_)
-  {
-    const auto & feasiblePolytope = DCMPoly_->getForcePolyPlanes(contact.first);
-    DCMTask_->setContactPlanes(contact.first, feasiblePolytope);
-  }
-  DCMTask_->setDCMPoly(DCMPoly_->getVRPPlanes());
-  DCMTask_->setZeroMomentPoly(DCMPoly_->getZeroMomentPlanes());
+  // for(auto & contact : R1Contacts_)
+  // {
+  //   const auto & feasiblePolytope = DCMPoly_->getForcePolyPlanes(contact.first);
+  //   DCMTask_->setContactPlanes(contact.first, feasiblePolytope);
+  // }
+  // DCMTask_->setDCMPoly(DCMPoly_->getVRPPlanes());
+  // DCMTask_->setZeroMomentPoly(DCMPoly_->getZeroMomentPlanes());
 
   return mc_control::fsm::Controller::run();
 }

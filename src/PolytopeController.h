@@ -3,7 +3,9 @@
 #include <mc_control/fsm/Controller.h>
 #include <mc_control/mc_controller.h>
 
+#include <mc_tasks/DCMTask.h>
 #include <mc_tasks/DCM_VRPTask.h>
+#include <mc_tasks/VRPTask.h>
 // #include "utils/MCStabilityPolytope.h"
 #include <mc_dynamic_polytopes/DynamicPolytope.h>
 
@@ -41,6 +43,8 @@ public:
   std::shared_ptr<DynamicPolytope> DCMPoly2_;
 
   std::shared_ptr<mc_tasks::DCM_VRP::DCM_VRPTask> DCMTask_;
+  std::shared_ptr<mc_tasks::DCM_VRP::DCMTask> DCMFunction_;
+  std::shared_ptr<mc_tasks::DCM_VRP::VRPTask> VRPFunction_;
 
 private:
   // planes normals and offsets for eCMP region testing and constraint
