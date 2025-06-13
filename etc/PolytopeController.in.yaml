@@ -17,9 +17,9 @@ StatesFiles:
 # If true, state factory will be more verbose
 VerboseStateFactory: false
 
-init_pos:
-  translation: [0.0, 0.0, 0.837656]
-  rotation: [0.0, 0.0, 1.570796327]
+# init_pos:
+#   translation: [0.0, 0.0, 0.837656]
+  # rotation: [0.0, 0.0, 1.570796327]
 
 # Additional robots to load
 robots:
@@ -49,7 +49,7 @@ constraints:
 # - type: dynamics
 #   robot: jvrc1
 #   damper: [0.1, 0.01, 0.5]
-#   # infTorque: true
+  # infTorque: true
 - type: compoundJoint
 # Collision constraint
 collisions:
@@ -71,13 +71,13 @@ contacts:
 #   r2: ground
 #   r1Surface: RightFoot
 #   r2Surface: AllGround
-#   dof: [0.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+#   dof: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 #   friction: 0.7
 # - r1: jvrc1
 #   r2: ground
 #   r1Surface: LeftFoot
 #   r2Surface: AllGround
-#   dof: [0.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+#   dof: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 #   friction: 0.7
 
 
@@ -91,7 +91,6 @@ DCM_VRPTask:
     P: 10
     I: 0
     D: 0
-    # TODO add tracker options
   robotMass:
     rhps1: 61.264
     hrp4: 35.178
@@ -122,6 +121,16 @@ VRPTask:
   above: [LeftFoot, RightFoot]
   weight: 100000
   stiffness: 10
+  CoP:
+    admittance:
+      couple: [0.01, 0.01, 0.]
+      force: [0.0, 0.0, 0.0]
+    stiffness: 5
+    damping: 300
+    weight: 1000
+    maxVel:
+      angular: [3., 3., 3.]
+      linear: [1., 1., 1.]
 
 DCMTask:
   type: DCM
@@ -209,6 +218,23 @@ states:
         above: [LeftFoot, RightFoot]
         weight: 100000
         stiffness: 10
+        CoP:
+          admittance:
+            couple: [0.03, 0.03, 0.]
+            force: [0.001, 0.001, 0.0002]
+          stiffness: 5
+          damping: 150
+          weight: 100000
+          maxVel:
+            angular: [3., 3., 3.]
+            linear: [1., 1., 1.]
+
+  SoloMomentum:
+    base: MetaTasks
+    tasks:
+      MomentumTask:
+        type: momentum
+
 
   ContactWall:
     base: MetaTasks
@@ -234,7 +260,7 @@ states:
       - r2: wall
         r1Surface: RightHand
         r2Surface: TableTop
-        dof: [0.0, 0.0, 1.0, 1.0, 1.0, 0.0]
+        dof: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
         friction: 0.8
 
   TouchHands:
@@ -265,17 +291,18 @@ states:
           # offset_rotation: [0.0, -1.57, 0.0]
         completion:
           eval: 0.01
-      CoMR1:
-        type: VRP
-        above: [LeftFoot, RightFoot]
-        weight: 10000
-        stiffness: 10
+      # No need, building VRP on main robot in constructor
+      # CoMR1:
+      #   type: VRP
+      #   above: [LeftFoot, RightFoot]
+      #   weight: 10000
+      #   stiffness: 10
       CoMR2:
-        type: com
+        type: VRP #com
         robot: jvrc1
         above: [LeftFoot, RightFoot]
-        weight: 2000
-        stiffness: 5
+        # weight: 2000
+        # stiffness: 5
     AddContactsAfter:
       - r2: jvrc1
         r1Surface: RightHand
@@ -288,9 +315,10 @@ states:
 # Transitions map
 transitions:
 - [EstimateMass, OK, PolytopeController_Initial, Auto]
-# - [PolytopeController_Initial, OK, ContactWall, Strict]
-- [PolytopeController_Initial, OK, SoloVRP, Auto]
-- [SoloVRP, OK, TouchHands, Strict]
+- [PolytopeController_Initial, OK, ContactWall, Strict]
+# - [PolytopeController_Initial, OK, SoloVRP, Strict]
+# - [PolytopeController_Initial, OK, SoloMomentum, Auto]
+# - [PolytopeController_Initial, OK, TouchHands, Strict]
 - [ContactWall, OK, Pause, Strict]
 - [TouchHands, OK, Pause, Strict]
 # Initial state

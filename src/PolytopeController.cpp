@@ -9,21 +9,16 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
                           return sva::interpolate(robot.surfacePose("LeftFoot"), robot.surfacePose("RightFoot"), 0.5);
                         });
 
-  DCMTask_ = mc_tasks::MetaTaskLoader::load<mc_tasks::DCM_VRP::DCM_VRPTask>(solver(), config("DCM_VRPTask"));
-  // XXX Comment task while testing the rest
+  // DCMTask_ = mc_tasks::MetaTaskLoader::load<mc_tasks::DCM_VRP::DCM_VRPTask>(solver(), config("DCM_VRPTask"));
   // solver().addTask(DCMTask_);
 
   // DCMFunction_ = mc_tasks::MetaTaskLoader::load<mc_tasks::DCM_VRP::DCMTask>(solver(), config("DCMTask"));
   // solver().addTask(DCMFunction_);
 
-  // VRPFunction_ = mc_tasks::MetaTaskLoader::load<mc_tasks::DCM_VRP::VRPTask>(solver(), config("VRPTask"));
-  // solver().addTask(VRPFunction_);
+  VRPFunction_ = mc_tasks::MetaTaskLoader::load<mc_tasks::DCM_VRP::VRPTask>(solver(), config("VRPTask"));
+  solver().addTask(VRPFunction_);
 
-  // initialize stabiliplus polytope object
-  // robotPolytope_ = std::make_shared<MCStabilityPolytope>(robot().name());
-  // robotPolytope_->load(config("StabilityPolytope")(robot().name()));
-  // robotPolytope_->addToLogger(logger());
-  // robotPolytope_->addToGUI(*gui());
+  // DCMPoly_ = std::make_shared<DynamicPolytope>(robot().name(), realRobot(), config("DynamicPolytope")("mainRobot"));
   DCMPoly_ = std::make_shared<DynamicPolytope>(robot().name(), robot(), config("DynamicPolytope")("mainRobot"));
   DCMPoly_->addToGUI(*gui(), 0.001);
   DCMPoly_->addToLogger(logger());
@@ -31,14 +26,6 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
   // DCMPoly2_ = std::make_shared<DynamicPolytope>("jvrc1", robot("jvrc1"), config("DynamicPolytope")("jvrc1"));
   // DCMPoly2_->addToGUI(*gui(), 0.001);
   // DCMPoly2_->addToLogger(logger());
-
-  wallPose_ = robot("wall").posW();
-  wallPose_.translation() += Eigen::Vector3d(-0.05, 0.4, 1.1);
-  gui()->addElement({"Wall"}, mc_rtc::gui::Transform(
-                                  "centre", [this]() -> const sva::PTransformd & { return wallPose_; },
-                                  [this](const sva::PTransformd & p) { wallPose_ = p; })
-
-  );
 
   robotDCMtarget_ = robot().com();
   // gui()->addElement({"Robot"}, mc_rtc::gui::Transform(
@@ -71,6 +58,7 @@ bool PolytopeController::run()
     // This should allow "testing" if there exists a valid distrib by adding one of the unused contacts where it
     // currently is
     // Should be extended by mpc but idk if computation is too heavy
+    // TODO handle this in library
     if(contact->r1Index() == DCMPoly_->robot().robotIndex())
     {
       R1Contacts_.emplace(contact->r1Surface()->name(), const_cast<mc_rbdyn::Contact &>(*contact));
@@ -89,11 +77,13 @@ bool PolytopeController::run()
     // }
   }
 
-  // set the current controller contacts for computations
+  // set the current controller contacts for computations (comment to not run the polytope lib)
   DCMPoly_->setControllerContacts(R1Contacts_);
   // DCMPoly2_->setControllerContacts(R2Contacts_);
 
-  DCMTask_->setDCMTarget(robotDCMtarget_.translation());
+  // set targets for tasks (not needed if manipulated from GUI)
+  // DCMTask_->setDCMTarget(robotDCMtarget_.translation());
+  // DCMFunction_->targetDCM(robotDCMtarget_.translation());
   // VRPFunction_->targetDCM(robotDCMtarget_.translation());
 
   // get the planes to constraint or use in the controller (will be empty in the first iterations)
@@ -106,43 +96,22 @@ bool PolytopeController::run()
   // DCMTask_->setZeroMomentPoly(DCMPoly_->getZeroMomentPlanes());
 
   return mc_control::fsm::Controller::run();
+  // return mc_control::fsm::Controller::run(mc_solver::FeedbackType::ObservedRobots);
 }
 
 void PolytopeController::reset(const mc_control::ControllerResetData & reset_data)
 {
   mc_control::fsm::Controller::reset(reset_data);
+  if(DCMTask_)
+  {
+    DCMTask_->reset();
+  }
+  if(DCMFunction_)
+  {
+    DCMFunction_->reset();
+  }
+  if(VRPFunction_)
+  {
+    VRPFunction_->reset();
+  }
 }
-
-// void PolytopeController::updateObjective(MCStabilityPolytope * polytope_,
-//                                          Eigen::Vector3d currentPos,
-//                                          Eigen::Vector3d & objective)
-// {
-//   double filterCoeff = 0.7;
-//   auto planes = polytope_->constraintPlanes();
-
-//   // XXX version with objective towards middle of polytope
-//   Eigen::Vector3d chebichev = polytope_->chebichevCenter();
-//   Eigen::Vector3d bary = polytope_->baryCenter();
-//   // lowpass filtering of center of polytope (very noisy from every computation)
-//   // lowPassPolyCenter_.update(bary);
-//   // bary = lowPassPolyCenter_.eval();
-//   Eigen::Vector3d filteredObjective = (1 - filterCoeff) * currentPos + filterCoeff * bary;
-//   // lowPassPolyCenter_.update(chebichev);
-//   // chebichev = lowPassPolyCenter_.eval();
-//   // Eigen::Vector3d filteredObjective = (1 - chebichevCoef_) * currentPos + chebichevCoef_ * chebichev;
-//   // objective = polytope_.objectiveInPolytope(filteredObjective);
-
-//   // XXX version with current pos as objective
-//   objective = polytope_->objectiveInPolytope(currentPos);
-//   if(polytope_->configToChange_)
-//   {
-//     // XXX needed only if using uncolored polyhedron implementation
-//     // polytope_.removeFromGUI(*gui());
-//     // polytope_.addToGUI(*gui());
-//   }
-//   // prevent polytope projection to lower objective (from polytope form, closest point might be lower)
-//   if(objective.z() < currentPos.z())
-//   {
-//     objective.z() = currentPos.z();
-//   }
-// }
