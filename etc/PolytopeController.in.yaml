@@ -25,21 +25,22 @@ VerboseStateFactory: false
 robots:
   ground:
     module: env/ground
-  wall:
-    module: env/table
-    init_pos:
-      translation: [1.5, -0.2, 1.0]
-      # translation: [1.2, -0.6, 1.0]
-      rotation: [0.0, -1.57, 0.0]
+  # wall:
+  #   module: env/table
+  #   init_pos:
+  #     translation: [1.5, -0.2, 1.0]
+  #     # translation: [1.2, -0.6, 1.0]
+  #     rotation: [0.0, -1.57, 0.0]
   # jvrc1:
   #   module: JVRC1
   #   init_pos:
   #     translation: [0., 1.2, 0.8275]
   #     rotation: [0.0, 0.0, -1.570796327]
-  # box:
-  #   module: object/box
-  #   init_pos:
-  #     translation: [0., 2., 1.]
+  box:
+    module: object/box
+    init_pos:
+      translation: [0.4, 0., 0.9]
+      rotation: [0., 0., 0.]
 # General constraints, always on
 constraints:
 - type: contact
@@ -50,6 +51,9 @@ constraints:
 #   robot: jvrc1
 #   damper: [0.1, 0.01, 0.5]
   # infTorque: true
+- type: dynamics
+  robot: box
+  damper: [0.1, 0.01, 0.5]
 - type: compoundJoint
 # Collision constraint
 collisions:
@@ -79,6 +83,13 @@ contacts:
 #   r2Surface: AllGround
 #   dof: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 #   friction: 0.7
+- r1: box
+  r2: ground
+  r1Surface: Bottom
+  r2Surface: AllGround
+  dof: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+  friction: 0.7
+
 
 
 DCM_VRPTask:
@@ -140,7 +151,8 @@ DCMTask:
 
 DynamicPolytope:
   mainRobot:
-    possibleContacts: [RightFoot, LeftFoot, RightHand]
+    # TODO find a way to avoid having to declare them
+    possibleContacts: [RightFoot, LeftFoot, RightHand, LeftHand]
     withMoments: false
     computeRegions: false
     gui:
@@ -310,15 +322,101 @@ states:
         dof: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
         friction: 0.8
 
+  GrabBox:
+    base: MetaTasks
+    tasks:
+      RightHandTraj:
+        type: transform
+        frame: RightHand
+        weight: 1000
+        stiffness: 5
+        targetFrame:
+          robot: box
+          frame: Left
+          offset:
+            translation: [0.0, 0.0, 0.0]
+            rotation: [3.14, 0.0, -1.57]
+        completion:
+          eval: 0.01
+      LeftHandTraj:
+        type: transform
+        frame: LeftHand
+        weight: 1000
+        stiffness: 5
+        targetFrame:
+          robot: box
+          frame: Right
+          offset:
+            translation: [0.0, 0.0, 0.0]
+            rotation: [3.14, 0.0, 1.57]
+        completion:
+          eval: 0.01
+    AddContactsAfter:
+      - r2: box
+        r1Surface: RightHand
+        r2Surface: Left
+        dof: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+        friction: 0.7
+      - r2: box
+        r1Surface: LeftHand
+        r2Surface: Right
+        dof: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+        friction: 0.7
+    RemoveContactsAfter:
+      - r1: box
+        r2: ground
+        r1Surface: Bottom
+        r2Surface: AllGround
+
+  GrabBoxUnder:
+    base: MetaTasks
+    tasks:
+      RightHandTraj:
+        type: transform
+        frame: RightHand
+        weight: 1000
+        stiffness: 5
+        targetFrame:
+          robot: box
+          frame: Bottom
+          offset:
+            translation: [0.0, 0.0, 0.0]
+            rotation: [3.14, 0.0, 4.71]
+        completion:
+          eval: 0.01
+    AddContactsAfter:
+      - r2: box
+        r1Surface: RightHand
+        r2Surface: Bottom
+        dof: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+        friction: 0.7
+    RemoveContactsAfter:
+      - r1: box
+        r2: ground
+        r1Surface: Bottom
+        r2Surface: AllGround
+
+  VRPBox:
+    base: MetaTasks
+    tasks:
+      BoxVRP:
+        type: VRP
+        robot: box
+        weight: 0
+        stiffness: 0
 
 
 # Transitions map
 transitions:
 - [EstimateMass, OK, PolytopeController_Initial, Auto]
-- [PolytopeController_Initial, OK, ContactWall, Strict]
+# - [PolytopeController_Initial, OK, ContactWall, Strict]
 # - [PolytopeController_Initial, OK, SoloVRP, Strict]
 # - [PolytopeController_Initial, OK, SoloMomentum, Auto]
 # - [PolytopeController_Initial, OK, TouchHands, Strict]
+- [PolytopeController_Initial, OK, GrabBox, Strict]
+# - [PolytopeController_Initial, OK, GrabBoxUnder, Strict]
+- [GrabBox, OK, VRPBox, Strict]
+- [GrabBoxUnder, OK, VRPBox, Strict]
 - [ContactWall, OK, Pause, Strict]
 - [TouchHands, OK, Pause, Strict]
 # Initial state
