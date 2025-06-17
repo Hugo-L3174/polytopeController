@@ -38,12 +38,6 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
 
 bool PolytopeController::run()
 {
-  // move wall around using gui pointer
-  sva::PTransformd pos = wallPose_;
-  pos.translation() -= Eigen::Vector3d(-0.05, 0.4, 1.1);
-  // XXX updating posW does not seem to update the contact constraints?
-  // robot("wall").posW(pos);
-
   // get list of the current contacts
   R1Contacts_.clear();
   R2Contacts_.clear();
@@ -53,10 +47,6 @@ bool PolytopeController::run()
     contact->compute_X_r2s_r1s(robots());
     // emplacing X_r1_r2 between controlled and target contact: will define orientation of friction cone in controlled
     // frame
-    // TODO take offset into account
-    // TODO compute a default contact polytope even when there is no contact (transform should be identity then)
-    // This should allow "testing" if there exists a valid distrib by adding one of the unused contacts where it
-    // currently is
     // Should be extended by mpc but idk if computation is too heavy
     // TODO handle this in library
     if(contact->r1Index() == DCMPoly_->robot().robotIndex())

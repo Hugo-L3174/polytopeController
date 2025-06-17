@@ -132,6 +132,7 @@ VRPTask:
   above: [LeftFoot, RightFoot]
   weight: 100000
   stiffness: 10
+  withBounding: false
   CoP:
     admittance:
       couple: [0.01, 0.01, 0.]
@@ -402,8 +403,9 @@ states:
       BoxVRP:
         type: VRP
         robot: box
-        weight: 0
-        stiffness: 0
+        withBounding: false
+        weight: 100000
+        stiffness: 10
 
 
 # Transitions map
@@ -414,6 +416,7 @@ transitions:
 # - [PolytopeController_Initial, OK, SoloMomentum, Auto]
 # - [PolytopeController_Initial, OK, TouchHands, Strict]
 - [PolytopeController_Initial, OK, GrabBox, Strict]
+# - [PolytopeController_Initial, OK, VRPBox, Strict]
 # - [PolytopeController_Initial, OK, GrabBoxUnder, Strict]
 - [GrabBox, OK, VRPBox, Strict]
 - [GrabBoxUnder, OK, VRPBox, Strict]
@@ -440,3 +443,13 @@ ObserverPipelines:
     gui: true                            #   Displays the estimated velocity as an arrow (default)
     config:
       bodySensor: Accelerometer          # This observer only uses roll and pitch rotation information from this sensor along with a kinematic anchor point and the robot kinematics between the anchor frame and the floating base frame.
+- name: BoxPipeline
+  gui: true
+  log: true
+  observers:
+  - type: BodySensor                     # - Use a BodySensor observer
+    update: true                        #   Update the real robot state
+    gui: true                           #   Display in the gui
+    config:
+      robot: box
+      bodySensor: FloatingBase
