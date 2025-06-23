@@ -17,9 +17,6 @@ StatesFiles:
 # If true, state factory will be more verbose
 VerboseStateFactory: false
 
-# init_pos:
-#   translation: [0.0, 0.0, 0.837656]
-  # rotation: [0.0, 0.0, 1.570796327]
 
 # Additional robots to load
 robots:
@@ -31,11 +28,11 @@ robots:
   #     translation: [1.5, -0.2, 1.0]
   #     # translation: [1.2, -0.6, 1.0]
   #     rotation: [0.0, -1.57, 0.0]
-  # jvrc1:
-  #   module: JVRC1
+  # rhps1:
+  #   module: RHPS1_plate_plate
   #   init_pos:
-  #     translation: [0., 1.2, 0.8275]
-  #     rotation: [0.0, 0.0, -1.570796327]
+  #     translation: [1.2, 0., 0.837656]
+  #     rotation: [0.0, 0.0, -3.14]
   box:
     module: object/box
     init_pos:
@@ -47,13 +44,12 @@ constraints:
 - type: dynamics
   damper: [0.1, 0.01, 0.5]
   # infTorque: true
-# - type: dynamics
-#   robot: jvrc1
-#   damper: [0.1, 0.01, 0.5]
-  # infTorque: true
 - type: dynamics
   robot: box
   damper: [0.1, 0.01, 0.5]
+# - type: dynamics
+#   robot: rhps1
+#   damper: [0.1, 0.01, 0.5]
 - type: compoundJoint
 # Collision constraint
 collisions:
@@ -71,18 +67,19 @@ contacts:
   r2Surface: AllGround
   dof: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
   friction: 0.7
-# - r1: jvrc1
+# - r1: rhps1
 #   r2: ground
 #   r1Surface: RightFoot
 #   r2Surface: AllGround
 #   dof: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 #   friction: 0.7
-# - r1: jvrc1
+# - r1: rhps1
 #   r2: ground
 #   r1Surface: LeftFoot
 #   r2Surface: AllGround
 #   dof: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 #   friction: 0.7
+# Dummy contact to be removed, to fix box before grabbing it
 - r1: box
   r2: ground
   r1Surface: Bottom
@@ -145,6 +142,25 @@ VRPTask:
       angular: [3., 3., 3.]
       linear: [1., 1., 1.]
 
+VRPTask2:
+  type: VRP
+  robot: rhps1
+  above: [LeftFoot, RightFoot]
+  weight: 100000
+  stiffness: 10
+  withMomentsOffset: true
+  withBounding: false
+  CoP:
+    admittance:
+      couple: [0.01, 0.01, 0.]
+      force: [0.0, 0.0, 0.0]
+    stiffness: 5
+    damping: 300
+    weight: 1000
+    maxVel:
+      angular: [3., 3., 3.]
+      linear: [1., 1., 1.]
+
 DCMTask:
   type: DCM
   above: [LeftFoot, RightFoot]
@@ -182,8 +198,8 @@ DynamicPolytope:
       polyhedronZeroMomentArea:
         <<: *polyhedron
         triangle_color: [0.7, 0.3, 0.0, 0.2]
-  jvrc1:
-    possibleContacts: [RightFoot, LeftFoot, LeftGripFlat]
+  rhps1:
+    possibleContacts: [RightFoot, LeftFoot, RightHand, LeftHand]
     withMoments: false
     computeRegions: false
     gui:
@@ -286,41 +302,25 @@ states:
         weight: 1000
         stiffness: 5
         target:
-          rotation: [0., -1.57, 1.57]
-          translation: [0.3, 0.65, 1.]
-          # offset_translation: [-0.05, -0.2, 0.0]
-          # offset_rotation: [0.0, -1.57, 0.0]
+          rotation: [0., -1.57, 0.]
+          translation: [0.65, -0.3, 1.]
         completion:
           eval: 0.01
       LeftHandTrajR2:
         type: transform
-        robot: jvrc1
-        frame: LeftGripFlat
+        robot: rhps1
+        frame: LeftHand
         weight: 1000
         stiffness: 5
         target:
-          rotation: [0., -1.57, -1.57]
-          translation: [0.3, 0.65, 1.]
-          # offset_translation: [-0.05, -0.2, 0.0]
-          # offset_rotation: [0.0, -1.57, 0.0]
+          rotation: [0., -1.57, 3.14]
+          translation: [0.65, -0.3, 1.]
         completion:
           eval: 0.01
-      # No need, building VRP on main robot in constructor
-      # CoMR1:
-      #   type: VRP
-      #   above: [LeftFoot, RightFoot]
-      #   weight: 10000
-      #   stiffness: 10
-      CoMR2:
-        type: VRP #com
-        robot: jvrc1
-        above: [LeftFoot, RightFoot]
-        # weight: 2000
-        # stiffness: 5
     AddContactsAfter:
-      - r2: jvrc1
+      - r2: rhps1
         r1Surface: RightHand
-        r2Surface: LeftGripFlat
+        r2Surface: LeftHand
         dof: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
         friction: 0.8
 
@@ -445,13 +445,13 @@ ObserverPipelines:
     gui: true                            #   Displays the estimated velocity as an arrow (default)
     config:
       bodySensor: Accelerometer          # This observer only uses roll and pitch rotation information from this sensor along with a kinematic anchor point and the robot kinematics between the anchor frame and the floating base frame.
-- name: BoxPipeline
-  gui: true
-  log: true
-  observers:
-  - type: BodySensor                     # - Use a BodySensor observer
-    update: true                        #   Update the real robot state
-    gui: true                           #   Display in the gui
-    config:
-      robot: box
-      bodySensor: FloatingBase
+# - name: BoxPipeline
+#   gui: true
+#   log: true
+#   observers:
+#   - type: BodySensor                     # - Use a BodySensor observer
+#     update: true                        #   Update the real robot state
+#     gui: true                           #   Display in the gui
+#     config:
+#       robot: box
+#       bodySensor: FloatingBase

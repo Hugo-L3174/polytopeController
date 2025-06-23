@@ -23,9 +23,15 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
   DCMPoly_->addToGUI(*gui(), 0.001);
   DCMPoly_->addToLogger(logger());
 
-  // DCMPoly2_ = std::make_shared<DynamicPolytope>("jvrc1", robot("jvrc1"), config("DynamicPolytope")("jvrc1"));
-  // DCMPoly2_->addToGUI(*gui(), 0.001);
-  // DCMPoly2_->addToLogger(logger());
+  if(hasRobot("rhps1"))
+  {
+    VRPFunction2_ = mc_tasks::MetaTaskLoader::load<mc_tasks::DCM_VRP::VRPTask>(solver(), config("VRPTask2"));
+    solver().addTask(VRPFunction2_);
+
+    DCMPoly2_ = std::make_shared<DynamicPolytope>("rhps1", robot("rhps1"), config("DynamicPolytope")("rhps1"));
+    DCMPoly2_->addToGUI(*gui(), 0.001);
+    DCMPoly2_->addToLogger(logger());
+  }
 
   robotDCMtarget_ = robot().com();
   // gui()->addElement({"Robot"}, mc_rtc::gui::Transform(
@@ -57,19 +63,27 @@ bool PolytopeController::run()
     {
       R1Contacts_.emplace(contact->r2Surface()->name(), const_cast<mc_rbdyn::Contact &>(*contact));
     }
-    // if(contact->r1Index() == DCMPoly2_->robot().robotIndex())
-    // {
-    //   R2Contacts_.emplace(contact->r1Surface()->name(), const_cast<mc_rbdyn::Contact &>(*contact));
-    // }
-    // else if(contact->r2Index() == DCMPoly2_->robot().robotIndex())
-    // {
-    //   R2Contacts_.emplace(contact->r2Surface()->name(), const_cast<mc_rbdyn::Contact &>(*contact));
-    // }
+
+    // Case of dual robot
+    if(hasRobot("rhps1"))
+    {
+      if(contact->r1Index() == DCMPoly2_->robot().robotIndex())
+      {
+        R2Contacts_.emplace(contact->r1Surface()->name(), const_cast<mc_rbdyn::Contact &>(*contact));
+      }
+      else if(contact->r2Index() == DCMPoly2_->robot().robotIndex())
+      {
+        R2Contacts_.emplace(contact->r2Surface()->name(), const_cast<mc_rbdyn::Contact &>(*contact));
+      }
+    }
   }
 
   // set the current controller contacts for computations (comment to not run the polytope lib)
   DCMPoly_->setControllerContacts(R1Contacts_);
-  // DCMPoly2_->setControllerContacts(R2Contacts_);
+  if(hasRobot("rhps1"))
+  {
+    DCMPoly2_->setControllerContacts(R2Contacts_);
+  }
 
   // set targets for tasks (not needed if manipulated from GUI)
   // DCMTask_->setDCMTarget(robotDCMtarget_.translation());
@@ -103,5 +117,9 @@ void PolytopeController::reset(const mc_control::ControllerResetData & reset_dat
   if(VRPFunction_)
   {
     VRPFunction_->reset();
+  }
+  if(VRPFunction2_)
+  {
+    VRPFunction2_->reset();
   }
 }

@@ -45,6 +45,7 @@ public:
   std::shared_ptr<mc_tasks::DCM_VRP::DCM_VRPTask> DCMTask_;
   std::shared_ptr<mc_tasks::DCM_VRP::DCMTask> DCMFunction_;
   std::shared_ptr<mc_tasks::DCM_VRP::VRPTask> VRPFunction_;
+  std::shared_ptr<mc_tasks::DCM_VRP::VRPTask> VRPFunction2_;
 
 private:
   // planes normals and offsets for eCMP region testing and constraint
