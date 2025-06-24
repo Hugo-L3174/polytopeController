@@ -23,12 +23,13 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
   DCMPoly_->addToGUI(*gui(), 0.001);
   DCMPoly_->addToLogger(logger());
 
-  if(hasRobot("rhps1"))
+  if(hasRobot("rhps1-interact"))
   {
     VRPFunction2_ = mc_tasks::MetaTaskLoader::load<mc_tasks::DCM_VRP::VRPTask>(solver(), config("VRPTask2"));
     solver().addTask(VRPFunction2_);
 
-    DCMPoly2_ = std::make_shared<DynamicPolytope>("rhps1", robot("rhps1"), config("DynamicPolytope")("rhps1"));
+    DCMPoly2_ = std::make_shared<DynamicPolytope>("rhps1-interact", robot("rhps1-interact"),
+                                                  config("DynamicPolytope")("rhps1-interact"));
     DCMPoly2_->addToGUI(*gui(), 0.001);
     DCMPoly2_->addToLogger(logger());
   }
@@ -65,7 +66,7 @@ bool PolytopeController::run()
     }
 
     // Case of dual robot
-    if(hasRobot("rhps1"))
+    if(hasRobot("rhps1-interact"))
     {
       if(contact->r1Index() == DCMPoly2_->robot().robotIndex())
       {
@@ -80,7 +81,7 @@ bool PolytopeController::run()
 
   // set the current controller contacts for computations (comment to not run the polytope lib)
   DCMPoly_->setControllerContacts(R1Contacts_);
-  if(hasRobot("rhps1"))
+  if(hasRobot("rhps1-interact"))
   {
     DCMPoly2_->setControllerContacts(R2Contacts_);
   }

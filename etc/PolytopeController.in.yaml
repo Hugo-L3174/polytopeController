@@ -28,7 +28,7 @@ robots:
   #     translation: [1.5, -0.2, 1.0]
   #     # translation: [1.2, -0.6, 1.0]
   #     rotation: [0.0, -1.57, 0.0]
-  # rhps1:
+  # rhps1-interact:
   #   module: RHPS1_plate_plate
   #   init_pos:
   #     translation: [1.2, 0., 0.837656]
@@ -48,7 +48,7 @@ constraints:
   robot: box
   damper: [0.1, 0.01, 0.5]
 # - type: dynamics
-#   robot: rhps1
+#   robot: rhps1-interact
 #   damper: [0.1, 0.01, 0.5]
 - type: compoundJoint
 # Collision constraint
@@ -67,13 +67,13 @@ contacts:
   r2Surface: AllGround
   dof: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
   friction: 0.7
-# - r1: rhps1
+# - r1: rhps1-interact
 #   r2: ground
 #   r1Surface: RightFoot
 #   r2Surface: AllGround
 #   dof: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 #   friction: 0.7
-# - r1: rhps1
+# - r1: rhps1-interact
 #   r2: ground
 #   r1Surface: LeftFoot
 #   r2Surface: AllGround
@@ -144,7 +144,7 @@ VRPTask:
 
 VRPTask2:
   type: VRP
-  robot: rhps1
+  robot: rhps1-interact
   above: [LeftFoot, RightFoot]
   weight: 100000
   stiffness: 10
@@ -198,7 +198,7 @@ DynamicPolytope:
       polyhedronZeroMomentArea:
         <<: *polyhedron
         triangle_color: [0.7, 0.3, 0.0, 0.2]
-  rhps1:
+  rhps1-interact:
     possibleContacts: [RightFoot, LeftFoot, RightHand, LeftHand]
     withMoments: false
     computeRegions: false
@@ -308,7 +308,7 @@ states:
           eval: 0.01
       LeftHandTrajR2:
         type: transform
-        robot: rhps1
+        robot: rhps1-interact
         frame: LeftHand
         weight: 1000
         stiffness: 5
@@ -318,7 +318,7 @@ states:
         completion:
           eval: 0.01
     AddContactsAfter:
-      - r2: rhps1
+      - r2: rhps1-interact
         r1Surface: RightHand
         r2Surface: LeftHand
         dof: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
