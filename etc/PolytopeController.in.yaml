@@ -129,7 +129,6 @@ VRPTask:
   above: [LeftFoot, RightFoot]
   weight: 100000
   stiffness: 10
-  withMomentsOffset: true
   withBounding: false
   CoP:
     admittance:
@@ -148,7 +147,6 @@ VRPTask2:
   above: [LeftFoot, RightFoot]
   weight: 100000
   stiffness: 10
-  withMomentsOffset: true
   withBounding: false
   CoP:
     admittance:
@@ -405,7 +403,6 @@ states:
         type: VRP
         robot: box
         withBounding: false
-        withMomentsOffset: false
         weight: 100000
         stiffness: 10
 
