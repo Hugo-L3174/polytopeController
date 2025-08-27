@@ -22,31 +22,31 @@ VerboseStateFactory: false
 robots:
   ground:
     module: env/ground
-  # wall:
-  #   module: env/table
-  #   init_pos:
-  #     translation: [1.5, -0.2, 1.0]
-  #     # translation: [1.2, -0.6, 1.0]
-  #     rotation: [0.0, -1.57, 0.0]
+  wall:
+    module: env/table
+    init_pos:
+      translation: [1.5, -0.2, 1.0]
+      # translation: [1.2, -0.6, 1.0]
+      rotation: [0.0, -1.57, 0.0]
   # rhps1_interact:
   #   module: RHPS1_plate_plate
   #   init_pos:
   #     translation: [1.2, 0., 0.837656]
   #     rotation: [0.0, 0.0, -3.14]
-  box:
-    module: object/box
-    init_pos:
-      translation: [0.4, 0., 0.9]
-      rotation: [0., 0., 0.]
+  # box:
+  #   module: object/box
+  #   init_pos:
+  #     translation: [0.4, 0., 0.9]
+  #     rotation: [0., 0., 0.]
 # General constraints, always on
 constraints:
 - type: contact
 - type: dynamics
   damper: [0.1, 0.01, 0.5]
   # infTorque: true
-- type: dynamics
-  robot: box
-  damper: [0.1, 0.01, 0.5]
+# - type: dynamics
+#   robot: box
+#   damper: [0.1, 0.01, 0.5]
 # - type: dynamics
 #   robot: rhps1_interact
 #   damper: [0.1, 0.01, 0.5]
@@ -80,12 +80,12 @@ contacts:
 #   dof: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 #   friction: 0.7
 # Dummy contact to be removed, to fix box before grabbing it
-- r1: box
-  r2: ground
-  r1Surface: Bottom
-  r2Surface: AllGround
-  dof: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-  friction: 0.7
+# - r1: box
+#   r2: ground
+#   r1Surface: Bottom
+#   r2Surface: AllGround
+#   dof: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+#   friction: 0.7
 
 
 
@@ -410,11 +410,11 @@ states:
 # Transitions map
 transitions:
 - [EstimateMass, OK, PolytopeController_Initial, Auto]
-# - [PolytopeController_Initial, OK, ContactWall, Strict]
+- [PolytopeController_Initial, OK, ContactWall, Strict]
 # - [PolytopeController_Initial, OK, SoloVRP, Strict]
 # - [PolytopeController_Initial, OK, SoloMomentum, Auto]
 # - [PolytopeController_Initial, OK, TouchHands, Strict]
-- [PolytopeController_Initial, OK, GrabBox, Strict]
+# - [PolytopeController_Initial, OK, GrabBox, Strict]
 # - [PolytopeController_Initial, OK, VRPBox, Strict]
 # - [PolytopeController_Initial, OK, GrabBoxUnder, Strict]
 - [GrabBox, OK, VRPBox, Strict]
