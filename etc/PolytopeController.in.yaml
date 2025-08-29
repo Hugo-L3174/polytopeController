@@ -167,11 +167,10 @@ DCMTask:
 
 DynamicPolytope:
   mainRobot:
-    # TODO find a way to avoid having to declare them
-    possibleContacts: [RightFoot, LeftFoot, RightHand, LeftHand]
     withMoments: false
     computeRegions: false
     gui:
+      # General configuration
       polyhedronForce: &polyhedron
         triangle_color: [1.0, 0.0, 0.0, 0.2]
         show_triangle: true
@@ -183,7 +182,7 @@ DynamicPolytope:
         show_edges: false
         fixed_edge_color: true
         vertices:
-          color: [1.0, 0.0, 0.0, 1.0]
+          color: [1.0, 1.0, 0.0, 1.0]
           scale: 0.02
         show_vertices: false
         fixed_vertices_color: true
@@ -196,8 +195,16 @@ DynamicPolytope:
       polyhedronZeroMomentArea:
         <<: *polyhedron
         triangle_color: [0.7, 0.3, 0.0, 0.2]
+
+      # Per-contact configuration
+      contacts:
+        LeftFoot:
+          polyhedronMoment:
+            <<: *polyhedron
+            triangle_color: [0.0, 1.0, 0.0, 0.2]
+        # RightFoot:
+        # LeftHand:
   rhps1_interact:
-    possibleContacts: [RightFoot, LeftFoot, RightHand, LeftHand]
     withMoments: false
     computeRegions: false
     gui:
