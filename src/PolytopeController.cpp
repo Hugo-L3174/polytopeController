@@ -1,6 +1,8 @@
 #include "PolytopeController.h"
 #include <mc_tasks/MetaTaskLoader.h>
 
+using DynamicPolytope = mc_dynamic_polytopes::DynamicPolytope;
+
 PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, const mc_rtc::Configuration & config)
 : mc_control::fsm::Controller(rm, dt, config, {mc_solver::QPSolver::Backend::TVM})
 {
@@ -20,7 +22,7 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
 
   // DCMPoly_ = std::make_shared<DynamicPolytope>(robot().name(), realRobot(), config("DynamicPolytope")("mainRobot"));
   DCMPoly_ = std::make_shared<DynamicPolytope>(robot().name(), robot(), config("DynamicPolytope")("mainRobot"));
-  DCMPoly_->addToGUI(*gui(), 0.001);
+  DCMPoly_->addToGUI(gui().get());
   DCMPoly_->addToLogger(logger());
 
   if(hasRobot("rhps1_interact"))
@@ -30,7 +32,7 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
 
     DCMPoly2_ = std::make_shared<DynamicPolytope>("rhps1_interact", robot("rhps1_interact"),
                                                   config("DynamicPolytope")("rhps1_interact"));
-    DCMPoly2_->addToGUI(*gui(), 0.001);
+    DCMPoly2_->addToGUI(gui().get());
     DCMPoly2_->addToLogger(logger());
   }
 
@@ -81,9 +83,11 @@ bool PolytopeController::run()
 
   // set the current controller contacts for computations (comment to not run the polytope lib)
   DCMPoly_->setControllerContacts(R1Contacts_);
+  DCMPoly_->computeRegions();
   if(hasRobot("rhps1_interact"))
   {
     DCMPoly2_->setControllerContacts(R2Contacts_);
+    DCMPoly2_->computeRegions();
   }
 
   // set targets for tasks (not needed if manipulated from GUI)

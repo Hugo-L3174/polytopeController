@@ -39,8 +39,8 @@ public:
   // std::shared_ptr<ContactSet> contactSet_;
 
   // mc_dynamic_polytopes element
-  std::shared_ptr<DynamicPolytope> DCMPoly_;
-  std::shared_ptr<DynamicPolytope> DCMPoly2_;
+  std::shared_ptr<mc_dynamic_polytopes::DynamicPolytope> DCMPoly_;
+  std::shared_ptr<mc_dynamic_polytopes::DynamicPolytope> DCMPoly2_;
 
   std::shared_ptr<mc_tasks::DCM_VRP::DCM_VRPTask> DCMTask_;
   std::shared_ptr<mc_tasks::DCM_VRP::DCMTask> DCMFunction_;
