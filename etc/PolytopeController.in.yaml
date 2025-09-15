@@ -128,36 +128,33 @@ VRPTask:
   type: VRP
   above: [LeftFoot, RightFoot]
   weight: 100000
-  stiffness: 10
+  stiffness: 5
   withBounding: false
-  CoP:
-    admittance:
-      couple: [0.01, 0.01, 0.]
-      force: [0.0, 0.0, 0.0]
-    stiffness: 5
-    damping: 300
-    weight: 1000
-    maxVel:
-      angular: [3., 3., 3.]
-      linear: [1., 1., 1.]
+  autoTarget:
+    automatic: true
+    startContacts:
+      LeftFoot:
+        minVal: 0.001
+        maxVal: 1.
+        duration: 4.
+        startVal: 1.
+      RightFoot:
+        minVal: 0.001
+        maxVal: 1.
+        duration: 4.
+        startVal: 1.
+      RightHand:
+        minVal: 0.001
+        maxVal: 0.05
+        duration: 8.
 
 VRPTask2:
   type: VRP
   robot: rhps1_interact
   above: [LeftFoot, RightFoot]
   weight: 100000
-  stiffness: 10
+  stiffness: 5
   withBounding: false
-  CoP:
-    admittance:
-      couple: [0.01, 0.01, 0.]
-      force: [0.0, 0.0, 0.0]
-    stiffness: 5
-    damping: 300
-    weight: 1000
-    maxVel:
-      angular: [3., 3., 3.]
-      linear: [1., 1., 1.]
 
 DCMTask:
   type: DCM
@@ -253,16 +250,6 @@ states:
         above: [LeftFoot, RightFoot]
         weight: 100000
         stiffness: 10
-        CoP:
-          admittance:
-            couple: [0.03, 0.03, 0.]
-            force: [0.001, 0.001, 0.0002]
-          stiffness: 5
-          damping: 150
-          weight: 100000
-          maxVel:
-            angular: [3., 3., 3.]
-            linear: [1., 1., 1.]
 
   SoloMomentum:
     base: MetaTasks
@@ -411,7 +398,7 @@ states:
         robot: box
         withBounding: false
         weight: 100000
-        stiffness: 10
+        stiffness: 5
 
 
 # Transitions map
