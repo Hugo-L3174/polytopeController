@@ -17,6 +17,9 @@ StatesFiles:
 # If true, state factory will be more verbose
 VerboseStateFactory: false
 
+init_pos: # HRP4
+  translation: [0.1, 0., 0.747187]
+  rotation: [0.0, 0.0, -1.57]
 
 # Additional robots to load
 robots:
@@ -25,7 +28,7 @@ robots:
   wall:
     module: env/table
     init_pos:
-      translation: [1.5, -0.2, 1.0]
+      translation: [1.5, -0.3, 1.0]
       # translation: [1.2, -0.6, 1.0]
       rotation: [0.0, -1.57, 0.0]
   # rhps1_interact:
@@ -42,7 +45,7 @@ robots:
 constraints:
 - type: contact
 - type: dynamics
-  damper: [0.1, 0.01, 0.5]
+  damper: [0.4, 0.2, 1]
   # infTorque: true
 # - type: dynamics
 #   robot: box
@@ -135,18 +138,22 @@ VRPTask:
     startContacts:
       LeftFoot:
         minVal: 0.001
-        maxVal: 1.
+        maxVal: 0.8
         duration: 4.
         startVal: 1.
       RightFoot:
         minVal: 0.001
-        maxVal: 1.
+        maxVal: 0.8
         duration: 4.
         startVal: 1.
+      LeftHand:
+        minVal: 0.001
+        maxVal: 0.1
+        duration: 4.
       RightHand:
         minVal: 0.001
         maxVal: 0.05
-        duration: 8.
+        duration: 4.
 
 VRPTask2:
   type: VRP
@@ -256,6 +263,223 @@ states:
     tasks:
       MomentumTask:
         type: momentum
+
+  PutHandsFront:
+    base: MetaTasks
+    tasks:
+      RightHandTraj:
+        type: transform
+        frame: RightHand
+        weight: 1000
+        stiffness: 5
+        target:
+          rotation: [0., -1.57, 0.]
+          translation: [0.4, -0.25, 1.]
+        completion:
+          eval: 0.01
+      # LeftHandTraj:
+      #   type: transform
+      #   frame: LeftHand
+      #   weight: 1000
+      #   stiffness: 5
+      #   target:
+      #     rotation: [0., -1.57, 0.]
+      #     translation: [0.4, 0.25, 1.]
+      #   completion:
+      #     eval: 0.01
+    AddContactsAfter:
+      - r2: ground
+        r1Surface: RightHand
+        r2Surface: AllGround
+        dof: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        friction: 0.8
+
+  HandsFrontAndWallSafe:
+    base: MetaTasks
+    tasks:
+      RightHandTraj:
+        type: transform
+        frame: RightHand
+        weight: 1000
+        stiffness: 3
+        target:
+          rotation: [0., -1.57, -1.57]
+          translation: [-0.3, -0.4, 1.]
+        completion:
+          eval: 0.01
+      LeftHandTraj:
+        type: transform
+        frame: LeftHand
+        weight: 1000
+        stiffness: 3
+        targetSurface:
+          robot: wall
+          surface: TableTop
+        completion:
+          eval: 0.01
+    AddCollisions:
+      - r1: hrp4
+        r2: wall
+        collisions:
+          - body1: l_wrist
+            body2: table
+            iDist: 0.1
+            sDist: 0.02
+    RemoveCollisionsAfter:
+      - r1: hrp4
+        r2: wall
+        collisions:
+          - body1: l_wrist
+            body2: table
+            iDist: 0.1
+            sDist: 0.02
+
+  HandsFrontAndWall:
+    base: MetaTasks
+    tasks:
+      RightHandTraj:
+        type: transform
+        frame: RightHand
+        weight: 1000
+        stiffness: 3
+        target:
+          rotation: [0., -1.57, -1.57]
+          translation: [-0.3, -0.4, 1.]
+        completion:
+          eval: 0.01
+      LeftHandTraj:
+        type: transform
+        frame: LeftHand
+        weight: 1000
+        stiffness: 3
+        targetSurface:
+          robot: wall
+          surface: TableTop
+        completion:
+          eval: 0.01
+    AddContactsAfter:
+      # - r2: ground
+      #   r1Surface: RightHand
+      #   r2Surface: AllGround
+      #   dof: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      #   friction: 0.7
+      - r2: wall
+        r1Surface: LeftHand
+        r2Surface: TableTop
+        dof: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+        friction: 0.7
+
+  HoldHandsAdmi:
+    base: MetaTasks
+    tasks:
+      RightHandAdmi:
+        type: admittance
+        frame: RightHand
+        weight: 100
+        stiffness: 5
+        wrench:
+          couple: [0.0, 0.0, 0.0]
+          force: [0.0, 0.0, 0.0]
+        admittance:
+          couple: [0.001, 0.001, 0.0]
+          force: [0.00, 0.00, 0.005]
+      # LeftHandAdmi:
+      #   type: admittance
+      #   frame: LeftHand
+      #   weight: 100
+      #   stiffness: 5
+      #   wrench:
+      #     couple: [0.0, 0.0, 0.0]
+      #     force: [0.0, 0.0, 0.0]
+      #   admittance:
+      #     couple: [0.0, 0.0, 0.0]
+      #     force: [0.0, 0.0, 0.005]
+
+  RemoveLeftFoot:
+    base: MetaTasks
+    RemoveContacts:
+      - r2: ground
+        r1Surface: LeftFoot
+        r2Surface: AllGround
+    tasks:
+      LeftFootLift:
+        type: transform
+        frame: LeftFoot
+        move:
+          translation: [0., 0., 0.05]
+        completion:
+          eval: 0.02
+      RightHandAdmi:
+        type: admittance
+        frame: RightHand
+        weight: 100
+        stiffness: 5
+        wrench:
+          couple: [0.0, 0.0, 0.0]
+          force: [0.0, 0.0, 0.0]
+        admittance:
+          couple: [0.001, 0.001, 0.0]
+          force: [0.00, 0.00, 0.005]
+    AddCollisionsAfter:
+      - r1: hrp4
+        r2: ground
+        collisions:
+          - body1: l_ankle
+            body2: ground
+            iDist: 0.1
+            sDist: 0.02
+
+  HoldHandsAdmiNoFoot:
+    base: MetaTasks
+    tasks:
+      RightHandAdmi:
+        type: admittance
+        frame: RightHand
+        weight: 100
+        stiffness: 5
+        wrench:
+          couple: [0.0, 0.0, 0.0]
+          force: [0.0, 0.0, 0.0]
+        admittance:
+          couple: [0.001, 0.001, 0.0]
+          force: [0.00, 0.00, 0.005]
+
+  PositionLeftFoot:
+    base: MetaTasks
+    tasks:
+      LeftFootPose:
+        type: transform
+        frame: LeftFoot
+        targetSurface:
+          surface: RightFoot
+          offset_translation: [0.0, 0.2, 0.05]
+
+  PutBackLeftFoot:
+    base: MetaTasks
+    RemoveCollisions:
+      - r1: hrp4
+        r2: ground
+        collisions:
+          - body1: l_ankle
+            body2: ground
+            iDist: 0.1
+            sDist: 0.02
+    tasks:
+      LeftFootAdmi:
+        type: admittance
+        frame: LeftFoot
+        wrench:
+          couple: [0.0, 0.0, 0.0]
+          force: [0.0, 0.0, 10.0]
+        admittance:
+          couple: [0.0, 0.0, 0.0]
+          force: [0.00, 0.00, 0.005]
+    AddContactsAfter:
+      - r2: ground
+        r1Surface: LeftFoot
+        r2Surface: AllGround
+        dof: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+        friction: 0.7
 
 
   ContactWall:
@@ -403,18 +627,34 @@ states:
 
 # Transitions map
 transitions:
+# Initial states
 - [EstimateMass, OK, PolytopeController_Initial, Auto]
-- [PolytopeController_Initial, OK, ContactWall, Strict]
+# - [PolytopeController_Initial, OK, ContactWall, Strict]
 # - [PolytopeController_Initial, OK, SoloVRP, Strict]
 # - [PolytopeController_Initial, OK, SoloMomentum, Auto]
 # - [PolytopeController_Initial, OK, TouchHands, Strict]
 # - [PolytopeController_Initial, OK, GrabBox, Strict]
 # - [PolytopeController_Initial, OK, VRPBox, Strict]
 # - [PolytopeController_Initial, OK, GrabBoxUnder, Strict]
+# - [PolytopeController_Initial, OK, PutHandsFront, Strict]
+- [PolytopeController_Initial, OK, HandsFrontAndWallSafe, Strict]
+# Solo robot states
+- [ContactWall, OK, Pause, Strict]
+- [PutHandsFront, OK, HoldHandsAdmi, Strict]
+- [HandsFrontAndWallSafe, OK, HandsFrontAndWall, Strict]
+- [HandsFrontAndWall, OK, HoldHandsAdmi, Strict]
+- [HoldHandsAdmi, OK, RemoveLeftFoot, Strict]
+- [RemoveLeftFoot, OK, HoldHandsAdmiNoFoot, Auto]
+- [HoldHandsAdmiNoFoot, OK, PositionLeftFoot, Strict]
+- [PositionLeftFoot, OK, PutBackLeftFoot, Strict]
+- [PutBackLeftFoot, OK, HoldHandsAdmi, Strict]
+# Grab box states
 - [GrabBox, OK, VRPBox, Strict]
 - [GrabBoxUnder, OK, VRPBox, Strict]
-- [ContactWall, OK, Pause, Strict]
+# Dual robot states
 - [TouchHands, OK, Pause, Strict]
+
+
 # Initial state
 init: PolytopeController_Initial
 
