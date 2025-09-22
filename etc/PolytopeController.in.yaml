@@ -57,7 +57,7 @@ constraints:
 # Collision constraint
 collisions:
 - type: collision
-  useMinimal: true
+  useCommon: true
 # Initial set of contacts
 contacts:
 - r2: ground
@@ -201,7 +201,9 @@ DynamicPolytope:
         triangle_color: [0.7, 0.3, 0.0, 0.2]
 
       # Per-contact configuration
-      # "Color expressed as (r,g,b,a) array with values between 0 and 1. May also be a string with a color name [white, black, red, green, blue, cyan, magenta, yellow, gray, lightgray]. See {% doxygen mc_rtc::gui::Color %}.",
+      # Color expressed as (r,g,b,a) array with values between 0 and 1.
+      # May also be a string with a color name [white, black, red, green, blue, cyan, magenta, yellow, gray, lightgray].
+      # See {% doxygen mc_rtc::gui::Color %}
       contacts:
         LeftFoot:
           polyhedronMoment:
@@ -227,6 +229,7 @@ DynamicPolytope:
             triangle_color: [0.0, 1.0, 1.0, 0.2]
             edges:
               color: [0.0, 0.5, 0.5, 0.6]
+            guiScale: 0.005 # Bigger gui scale for clearer display in experiment
   rhps1_interact:
     withMoments: false
     computeRegions: false
@@ -329,7 +332,7 @@ states:
       LeftHandTraj:
         type: transform
         frame: LeftHand
-        weight: 1000
+        weight: 100
         stiffness: 3
         targetSurface:
           robot: wall
@@ -342,16 +345,16 @@ states:
         collisions:
           - body1: l_wrist
             body2: table
-            iDist: 0.1
-            sDist: 0.02
+            iDist: 0.15
+            sDist: 0.05
     RemoveCollisionsAfter:
       - r1: hrp4
         r2: wall
         collisions:
           - body1: l_wrist
             body2: table
-            iDist: 0.1
-            sDist: 0.02
+            iDist: 0.15
+            sDist: 0.05
 
   HandsFrontAndWall:
     base: MetaTasks
@@ -388,6 +391,10 @@ states:
         dof: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
         friction: 0.7
 
+  HoldHandHalfSit:
+    base: Parallel
+    states: [HalfSitting, HoldHandsAdmi]
+
   HoldHandsAdmi:
     base: MetaTasks
     tasks:
@@ -400,8 +407,8 @@ states:
           couple: [0.0, 0.0, 0.0]
           force: [0.0, 0.0, 0.0]
         admittance:
-          couple: [0.001, 0.001, 0.0]
-          force: [0.00, 0.00, 0.005]
+          couple: [0.0, 0.0, 0.0]
+          force: [0.01, 0.01, 0.01]
       # LeftHandAdmi:
       #   type: admittance
       #   frame: LeftHand
@@ -425,7 +432,7 @@ states:
         type: transform
         frame: LeftFoot
         move:
-          translation: [0., 0., 0.05]
+          translation: [0., 0., 0.1]
         completion:
           eval: 0.02
       RightHandAdmi:
@@ -437,16 +444,16 @@ states:
           couple: [0.0, 0.0, 0.0]
           force: [0.0, 0.0, 0.0]
         admittance:
-          couple: [0.001, 0.001, 0.0]
-          force: [0.00, 0.00, 0.005]
+          couple: [0.0, 0.0, 0.0]
+          force: [0.01, 0.01, 0.01]
     AddCollisionsAfter:
       - r1: hrp4
         r2: ground
         collisions:
           - body1: l_ankle
             body2: ground
-            iDist: 0.1
-            sDist: 0.02
+            iDist: 0.15
+            sDist: 0.1
 
   HoldHandsAdmiNoFoot:
     base: MetaTasks
@@ -460,8 +467,8 @@ states:
           couple: [0.0, 0.0, 0.0]
           force: [0.0, 0.0, 0.0]
         admittance:
-          couple: [0.001, 0.001, 0.0]
-          force: [0.00, 0.00, 0.005]
+          couple: [0.0, 0.0, 0.0]
+          force: [0.01, 0.01, 0.01]
 
   PositionLeftFoot:
     base: MetaTasks
@@ -471,7 +478,7 @@ states:
         frame: LeftFoot
         targetSurface:
           surface: RightFoot
-          offset_translation: [0.0, 0.2, 0.05]
+          offset_translation: [0.0, 0.2, 0.1]
 
   PutBackLeftFoot:
     base: MetaTasks
@@ -481,8 +488,8 @@ states:
         collisions:
           - body1: l_ankle
             body2: ground
-            iDist: 0.1
-            sDist: 0.02
+            iDist: 0.15
+            sDist: 0.1
     tasks:
       LeftFootAdmi:
         type: admittance
@@ -492,7 +499,7 @@ states:
           force: [0.0, 0.0, 10.0]
         admittance:
           couple: [0.0, 0.0, 0.0]
-          force: [0.00, 0.00, 0.005]
+          force: [0.00, 0.00, 0.01]
     AddContactsAfter:
       - r2: ground
         r1Surface: LeftFoot
@@ -666,7 +673,7 @@ transitions:
 - [RemoveLeftFoot, OK, HoldHandsAdmiNoFoot, Auto]
 - [HoldHandsAdmiNoFoot, OK, PositionLeftFoot, Strict]
 - [PositionLeftFoot, OK, PutBackLeftFoot, Strict]
-- [PutBackLeftFoot, OK, HoldHandsAdmi, Strict]
+- [PutBackLeftFoot, OK, HoldHandHalfSit, Strict]
 # Grab box states
 - [GrabBox, OK, VRPBox, Strict]
 - [GrabBoxUnder, OK, VRPBox, Strict]

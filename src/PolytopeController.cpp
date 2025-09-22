@@ -20,8 +20,10 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
   VRPFunction_ = mc_tasks::MetaTaskLoader::load<mc_tasks::DCM_VRP::VRPTask>(solver(), config("VRPTask"));
   solver().addTask(VRPFunction_);
 
-  // DCMPoly_ = std::make_shared<DynamicPolytope>(robot().name(), realRobot(), config("DynamicPolytope")("mainRobot"));
-  DCMPoly_ = std::make_shared<DynamicPolytope>(robot().name(), robot(), config("DynamicPolytope")("mainRobot"));
+  // DCMPoly_ = std::make_shared<DynamicPolytope>(robot().name(), realRobot(), config("DynamicPolytope")("mainRobot"),
+  // solver().controller());
+  DCMPoly_ = std::make_shared<DynamicPolytope>(robot().name(), robot(), config("DynamicPolytope")("mainRobot"),
+                                               solver().controller());
   DCMPoly_->addToGUI(gui().get());
   DCMPoly_->addToLogger(logger());
 
