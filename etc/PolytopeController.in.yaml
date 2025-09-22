@@ -181,12 +181,12 @@ DynamicPolytope:
         use_triangle_color: false
         edges:
           color: [0.75, 0.75, 0.75, 1.0]
-          width: 0.003
+          width: 0.002
           style: solid
-        show_edges: false
+        show_edges: true
         fixed_edge_color: true
         vertices:
-          color: [1.0, 1.0, 0.0, 1.0]
+          color: [0.0, 0.0, 0.5, 1.0]
           scale: 0.02
         show_vertices: false
         fixed_vertices_color: true
@@ -201,13 +201,32 @@ DynamicPolytope:
         triangle_color: [0.7, 0.3, 0.0, 0.2]
 
       # Per-contact configuration
+      # "Color expressed as (r,g,b,a) array with values between 0 and 1. May also be a string with a color name [white, black, red, green, blue, cyan, magenta, yellow, gray, lightgray]. See {% doxygen mc_rtc::gui::Color %}.",
       contacts:
         LeftFoot:
           polyhedronMoment:
             <<: *polyhedron
             triangle_color: [0.0, 1.0, 0.0, 0.2]
-        # RightFoot:
-        # LeftHand:
+            edges:
+              color: [0.0, 0.5, 0.0, 0.6]
+        RightFoot:
+          polyhedronMoment:
+            <<: *polyhedron
+            triangle_color: [0.0, 0.0, 1.0, 0.2]
+            edges:
+              color: [0.0, 0.0, 0.5, 0.6]
+        RightHand:
+          polyhedronMoment:
+            <<: *polyhedron
+            triangle_color: [1.0, 0.0, 0.0, 0.2]
+            edges:
+              color: [0.5, 0., 0., 0.6]
+        LeftHand:
+          polyhedronMoment:
+            <<: *polyhedron
+            triangle_color: [0.0, 1.0, 1.0, 0.2]
+            edges:
+              color: [0.0, 0.5, 0.5, 0.6]
   rhps1_interact:
     withMoments: false
     computeRegions: false
