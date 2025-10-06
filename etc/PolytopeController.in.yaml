@@ -17,9 +17,22 @@ StatesFiles:
 # If true, state factory will be more verbose
 VerboseStateFactory: false
 
-init_pos: # HRP4
-  translation: [0.1, 0., 0.747187]
-  rotation: [0.0, 0.0, -1.57]
+polytopeControllerInitPose:
+  hrp4:
+    translation:
+      x: 0.1
+      y: 0.
+    rotation: [0.0, 0.0, -1.57]
+  rhps1:
+    translation:
+      x: 0.1
+      y: -0.3
+    rotation: [0.0, 0.0, -1.57]
+  # rhps1_interact:
+  #   translation:
+  #     x:1.2
+  #     y: 0.
+  #   rotation: [0.0, 0.0, -3.14]
 
 # Additional robots to load
 robots:
@@ -33,9 +46,6 @@ robots:
       rotation: [0.0, -1.57, 0.0]
   # rhps1_interact:
   #   module: RHPS1_plate_plate
-  #   init_pos:
-  #     translation: [1.2, 0., 0.837656]
-  #     rotation: [0.0, 0.0, -3.14]
   # box:
   #   module: object/box
   #   init_pos:
@@ -267,14 +277,6 @@ DynamicPolytope:
         triangle_color: [0.7, 0.3, 0.0, 0.2]
 
 
-# Some options for a specific robot
-jvrc1:
-  posture:
-    stiffness: 1
-    weight: 10
-  ff:
-    stiffness: 2
-    weight: 100
 # Implement some additional text states
 states:
 
@@ -415,7 +417,7 @@ states:
           force: [0.0, 0.0, 0.0]
         admittance:
           couple: [0.0, 0.0, 0.0]
-          force: [0.01, 0.01, 0.01]
+          force: [0.005, 0.005, 0.005]
       # LeftHandAdmi:
       #   type: admittance
       #   frame: LeftHand
@@ -690,6 +692,8 @@ transitions:
 
 # Initial state
 init: PolytopeController_Initial
+
+Plugins: [ForceShoePlugin]
 
 ObserverPipelines:
 - name: MainRobPipeline                    # - Create a new pipeline

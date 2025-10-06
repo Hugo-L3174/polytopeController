@@ -11,6 +11,32 @@ PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, c
                           return sva::interpolate(robot.surfacePose("LeftFoot"), robot.surfacePose("RightFoot"), 0.5);
                         });
 
+  // Load a custom init_pos that preserves the inital values of the robot module
+  // and only overwrites what is specified in the configuration
+  if(auto pcInitPoseC = config.find("polytopeControllerInitPose"))
+  {
+    for(auto & robot : robots())
+    {
+      if(auto robotInitPose = pcInitPoseC->find(robot.name()))
+      {
+        auto initPosW = robot.posW();
+        if(auto translation = robotInitPose->find("translation"))
+        {
+          (*translation)("x", initPosW.translation().x());
+          (*translation)("y", initPosW.translation().y());
+          (*translation)("z", initPosW.translation().z());
+        }
+        if(auto rotation = robotInitPose->find("rotation"))
+        {
+          mc_rtc::log::info("Setting initial rotation for {} to {}", robot.name(), rotation->dump(true, true));
+          initPosW.rotation() = *rotation;
+        }
+        robot.posW(initPosW);
+        robot.forwardKinematics();
+      }
+    }
+  }
+
   // DCMTask_ = mc_tasks::MetaTaskLoader::load<mc_tasks::DCM_VRP::DCM_VRPTask>(solver(), config("DCM_VRPTask"));
   // solver().addTask(DCMTask_);
 
