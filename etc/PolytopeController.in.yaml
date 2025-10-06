@@ -39,9 +39,9 @@ robots:
   ground:
     module: env/ground
   wall:
-    module: env/table
+    module: env/ground
     init_pos:
-      translation: [1.5, -0.3, 1.0]
+      translation: [0.75, -0.2, 1.0]
       # translation: [1.2, -0.6, 1.0]
       rotation: [0.0, -1.57, 0.0]
   # rhps1_interact:
@@ -163,7 +163,7 @@ VRPTask:
         duration: 4.
       RightHand:
         minVal: 0.001
-        maxVal: 0.05
+        maxVal: 0.1
         duration: 4.
 
 VRPTask2:
@@ -223,6 +223,8 @@ DynamicPolytope:
             triangle_color: [0.0, 1.0, 0.0, 0.2]
             edges:
               color: [0.0, 0.5, 0.0, 0.6]
+              # BUG: default width is not picked up when it is not redefined, need to put it manually
+              width: 0.005
       RightFoot:
         nbFrictionSides: 8
         gui:
@@ -231,6 +233,7 @@ DynamicPolytope:
             triangle_color: [0.0, 0.0, 1.0, 0.2]
             edges:
               color: [0.0, 0.0, 0.5, 0.6]
+              width: 0.005
       RightHand:
         nbFrictionSides: 8
         gui:
@@ -239,6 +242,8 @@ DynamicPolytope:
             triangle_color: [1.0, 0.0, 0.0, 0.2]
             edges:
               color: [0.5, 0., 0., 0.6]
+              width: 0.005
+          guiScale: 0.005
       LeftHand:
         nbFrictionSides: 8
         gui:
@@ -247,6 +252,7 @@ DynamicPolytope:
             triangle_color: [0.0, 1.0, 1.0, 0.2]
             edges:
               color: [0.0, 0.5, 0.5, 0.6]
+              width: 0.005
           guiScale: 0.003 # Bigger gui scale for clearer display in experiment
   rhps1_interact:
     withMoments: false
@@ -346,24 +352,24 @@ states:
         stiffness: 3
         targetSurface:
           robot: wall
-          surface: TableTop
-          offset_translation: [0.2, -0.2, 0.1]
+          surface: AllGround
+          offset_translation: [0.2, -0.1, 0.1]
         completion:
           eval: 0.01
     AddCollisions:
-      - r1: hrp4
+      - r1: rhps1
         r2: wall
         collisions:
-          - body1: l_wrist
-            body2: table
+          - body1: L_WRIST_Y_LINK
+            body2: ground
             iDist: 0.15
             sDist: 0.05
     RemoveCollisionsAfter:
-      - r1: hrp4
+      - r1: rhps1
         r2: wall
         collisions:
-          - body1: l_wrist
-            body2: table
+          - body1: L_WRIST_Y_LINK
+            body2: ground
             iDist: 0.15
             sDist: 0.05
 
@@ -387,8 +393,8 @@ states:
         stiffness: 5
         targetSurface:
           robot: wall
-          surface: TableTop
-          offset_translation: [0.2, -0.2, 0.]
+          surface: AllGround
+          offset_translation: [0.2, -0.1, 0.]
         completion:
           eval: 0.01
     AddContactsAfter:
@@ -399,7 +405,7 @@ states:
       #   friction: 0.7
       - r2: wall
         r1Surface: LeftHand
-        r2Surface: TableTop
+        r2Surface: AllGround
         dof: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
         friction: 0.7
 
@@ -419,7 +425,7 @@ states:
           couple: [0.0, 0.0, 0.0]
           force: [0.0, 0.0, 0.0]
         admittance:
-          couple: [0.05, 0.05, 0.05]
+          couple: [0.07, 0.07, 0.07]
           force: [0.005, 0.005, 0.001]
       # LeftHandAdmi:
       #   type: admittance
@@ -443,6 +449,7 @@ states:
       LeftFootLift:
         type: transform
         frame: LeftFoot
+        stiffness: 5
         move:
           translation: [0., 0., 0.1]
         completion:
@@ -456,13 +463,20 @@ states:
           couple: [0.0, 0.0, 0.0]
           force: [0.0, 0.0, 0.0]
         admittance:
-          couple: [0.05, 0.05, 0.05]
+          couple: [0.07, 0.07, 0.07]
           force: [0.005, 0.005, 0.001]
     AddCollisionsAfter:
-      - r1: hrp4
+      - r1: rhps1
         r2: ground
         collisions:
-          - body1: l_ankle
+          - body1: L_ANKLE_P_LINK
+            body2: ground
+            iDist: 0.15
+            sDist: 0.1
+      - r1: rhps1
+        r2: wall
+        collisions:
+          - body1: L_ANKLE_P_LINK
             body2: ground
             iDist: 0.15
             sDist: 0.1
@@ -479,7 +493,7 @@ states:
           couple: [0.0, 0.0, 0.0]
           force: [0.0, 0.0, 0.0]
         admittance:
-          couple: [0.05, 0.05, 0.05]
+          couple: [0.07, 0.07, 0.07]
           force: [0.005, 0.005, 0.001]
 
   PositionLeftFoot:
@@ -495,10 +509,10 @@ states:
   PutBackLeftFoot:
     base: MetaTasks
     RemoveCollisions:
-      - r1: hrp4
+      - r1: rhps1
         r2: ground
         collisions:
-          - body1: l_ankle
+          - body1: L_ANKLE_P_LINK
             body2: ground
             iDist: 0.15
             sDist: 0.1
