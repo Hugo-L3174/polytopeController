@@ -26,7 +26,7 @@ polytopeControllerInitPose:
   rhps1:
     translation:
       x: 0.1
-      y: -0.3
+      y: 0.
     rotation: [0.0, 0.0, -1.57]
   # rhps1_interact:
   #   translation:
@@ -56,6 +56,7 @@ constraints:
 - type: contact
 - type: dynamics
   damper: [0.4, 0.2, 1]
+  # damper: [0.1, 0.01, 0.5]
   # infTorque: true
 # - type: dynamics
 #   robot: box
@@ -158,7 +159,7 @@ VRPTask:
         startVal: 1.
       LeftHand:
         minVal: 0.001
-        maxVal: 0.1
+        maxVal: 0.15
         duration: 4.
       RightHand:
         minVal: 0.001
@@ -246,7 +247,7 @@ DynamicPolytope:
             triangle_color: [0.0, 1.0, 1.0, 0.2]
             edges:
               color: [0.0, 0.5, 0.5, 0.6]
-          guiScale: 0.005 # Bigger gui scale for clearer display in experiment
+          guiScale: 0.003 # Bigger gui scale for clearer display in experiment
   rhps1_interact:
     withMoments: false
     computeRegions: false
@@ -305,7 +306,7 @@ states:
         stiffness: 5
         target:
           rotation: [0., -1.57, 0.]
-          translation: [0.4, -0.25, 1.]
+          translation: [0.4, -0.35, 1.]
         completion:
           eval: 0.01
       # LeftHandTraj:
@@ -328,16 +329,16 @@ states:
   HandsFrontAndWallSafe:
     base: MetaTasks
     tasks:
-      RightHandTraj:
-        type: transform
-        frame: RightHand
-        weight: 1000
-        stiffness: 3
-        target:
-          rotation: [0., -1.57, -1.57]
-          translation: [-0.3, -0.4, 1.]
-        completion:
-          eval: 0.01
+      # RightHandTraj:
+      #   type: transform
+      #   frame: RightHand
+      #   weight: 1000
+      #   stiffness: 3
+      #   target:
+      #     rotation: [0., -1.57, -1.57]
+      #     translation: [-0.3, -0.2, 1.1]
+      #   completion:
+      #     eval: 0.01
       LeftHandTraj:
         type: transform
         frame: LeftHand
@@ -346,6 +347,7 @@ states:
         targetSurface:
           robot: wall
           surface: TableTop
+          offset_translation: [0.2, -0.2, 0.1]
         completion:
           eval: 0.01
     AddCollisions:
@@ -368,24 +370,25 @@ states:
   HandsFrontAndWall:
     base: MetaTasks
     tasks:
-      RightHandTraj:
-        type: transform
-        frame: RightHand
-        weight: 1000
-        stiffness: 3
-        target:
-          rotation: [0., -1.57, -1.57]
-          translation: [-0.3, -0.4, 1.]
-        completion:
-          eval: 0.01
+      # RightHandTraj:
+      #   type: transform
+      #   frame: RightHand
+      #   weight: 1000
+      #   stiffness: 3
+      #   target:
+      #     rotation: [0., -1.57, -1.57]
+      #     translation: [-0.3, -0.3, 1.0]
+      #   completion:
+      #     eval: 0.01
       LeftHandTraj:
         type: transform
         frame: LeftHand
         weight: 1000
-        stiffness: 3
+        stiffness: 5
         targetSurface:
           robot: wall
           surface: TableTop
+          offset_translation: [0.2, -0.2, 0.]
         completion:
           eval: 0.01
     AddContactsAfter:
@@ -416,8 +419,8 @@ states:
           couple: [0.0, 0.0, 0.0]
           force: [0.0, 0.0, 0.0]
         admittance:
-          couple: [0.0, 0.0, 0.0]
-          force: [0.005, 0.005, 0.005]
+          couple: [0.05, 0.05, 0.05]
+          force: [0.005, 0.005, 0.001]
       # LeftHandAdmi:
       #   type: admittance
       #   frame: LeftHand
@@ -453,8 +456,8 @@ states:
           couple: [0.0, 0.0, 0.0]
           force: [0.0, 0.0, 0.0]
         admittance:
-          couple: [0.0, 0.0, 0.0]
-          force: [0.01, 0.01, 0.01]
+          couple: [0.05, 0.05, 0.05]
+          force: [0.005, 0.005, 0.001]
     AddCollisionsAfter:
       - r1: hrp4
         r2: ground
@@ -476,8 +479,8 @@ states:
           couple: [0.0, 0.0, 0.0]
           force: [0.0, 0.0, 0.0]
         admittance:
-          couple: [0.0, 0.0, 0.0]
-          force: [0.01, 0.01, 0.01]
+          couple: [0.05, 0.05, 0.05]
+          force: [0.005, 0.005, 0.001]
 
   PositionLeftFoot:
     base: MetaTasks
