@@ -55,8 +55,10 @@ robots:
 constraints:
 - type: contact
 - type: dynamics
-  damper: [0.4, 0.2, 1]
-  # damper: [0.1, 0.01, 0.5]
+  # damper: [0.4, 0.2, 1]
+  #damper: [0.1, 0.01, 0.5]
+  # damper is [interaction distance, safety distance, offset]
+  damper: [0.2, 0.01, 0.5]
   # infTorque: true
 # - type: dynamics
 #   robot: box
@@ -696,7 +698,7 @@ transitions:
 - [HandsFrontAndWallSafe, OK, HandsFrontAndWall, Strict]
 - [HandsFrontAndWall, OK, HoldHandsAdmi, Strict]
 - [HoldHandsAdmi, OK, RemoveLeftFoot, Strict]
-- [RemoveLeftFoot, OK, HoldHandsAdmiNoFoot, Auto]
+- [RemoveLeftFoot, OK, HoldHandsAdmiNoFoot, Strict]
 - [HoldHandsAdmiNoFoot, OK, PositionLeftFoot, Strict]
 - [PositionLeftFoot, OK, PutBackLeftFoot, Strict]
 - [PutBackLeftFoot, OK, HoldHandHalfSit, Strict]

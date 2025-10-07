@@ -1,3 +1,5 @@
-MainRobot: "HRP4::ImpactGrippers::MuJoCo"
+#MainRobot: "HRP4::ImpactGrippers::MuJoCo"
+#Timestep: 0.005
+MainRobot: RHPS1_forceshoe_forceshoe_lirmm_lirmm
+Timestep: 0.002
 Enabled: PolytopeController
-Timestep: 0.005
