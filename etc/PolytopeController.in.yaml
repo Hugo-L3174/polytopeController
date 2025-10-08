@@ -466,6 +466,8 @@ states:
       #     couple: [0.0, 0.0, 0.0]
       #     force: [0.0, 0.0, 0.005]
 
+  HoldHandsAdmi2:
+    base: HoldHandsAdmi
   RemoveLeftFoot:
     base: MetaTasks
     RemoveContacts:
@@ -532,6 +534,7 @@ states:
   PositionLeftFoot:
     base: MetaTasks
     tasks:
+      RightHandImpedance: *right-hand-impedance
       LeftFootPose:
         type: transform
         frame: LeftFoot
@@ -550,15 +553,19 @@ states:
             iDist: 0.15
             sDist: 0.1
     tasks:
+      RightHandImpedance: *right-hand-impedance
       LeftFootAdmi:
         type: admittance
         frame: LeftFoot
         wrench:
           couple: [0.0, 0.0, 0.0]
-          force: [0.0, 0.0, 10.0]
+          force: [0.0, 0.0, 1.0]
         admittance:
           couple: [0.0, 0.0, 0.0]
           force: [0.00, 0.00, 0.01]
+        completion:
+          wrench: [.NaN, .NaN, .NaN, .NaN, .NaN, 10]
+
     AddContactsAfter:
       - r2: ground
         r1Surface: LeftFoot
@@ -709,6 +716,20 @@ states:
         weight: 100000
         stiffness: 5
 
+  RemoveWallContact:
+    base: MetaTasks
+    RemoveContacts:
+      - r2: wall
+        r1Surface: LeftHand
+        r2Surface: AllGround
+    tasks:
+      RemoveLeftHand:
+        type: transform
+        frame: LeftHand
+        move:
+          translation: [0.0, 0.0, 0.1]
+        completion:
+          eval: 0.02
 
 # Transitions map
 transitions:
@@ -722,7 +743,7 @@ transitions:
 # - [PolytopeController_Initial, OK, VRPBox, Strict]
 # - [PolytopeController_Initial, OK, GrabBoxUnder, Strict]
 # - [PolytopeController_Initial, OK, PutHandsFront, Strict]
-- [PolytopeController_Initial, OK, HandsFrontAndWallSafe, Strict]
+- [HalfSitting, OK, HandsFrontAndWallSafe, Strict]
 # Solo robot states
 - [ContactWall, OK, Pause, Strict]
 - [PutHandsFront, OK, HoldHandsAdmi, Strict]
@@ -731,8 +752,10 @@ transitions:
 - [HoldHandsAdmi, OK, RemoveLeftFoot, Strict]
 - [RemoveLeftFoot, OK, HoldHandsAdmiNoFoot, Strict]
 - [HoldHandsAdmiNoFoot, OK, PositionLeftFoot, Strict]
-- [PositionLeftFoot, OK, PutBackLeftFoot, Auto]
-- [PutBackLeftFoot, OK, HoldHandHalfSit, Strict]
+- [PositionLeftFoot, OK, PutBackLeftFoot, Strict]
+- [PutBackLeftFoot, OK, HoldHandsAdmi2, Auto]
+- [HoldHandsAdmi2, OK, RemoveWallContact, Strict]
+- [RemoveWallContact, OK, HalfSitting, Auto]
 # Grab box states
 - [GrabBox, OK, VRPBox, Strict]
 - [GrabBoxUnder, OK, VRPBox, Strict]
@@ -740,7 +763,7 @@ transitions:
 - [TouchHands, OK, Pause, Strict]
 
 # Initial state
-init: PolytopeController_Initial
+init: HalfSitting
 
 rhps1:
   posture:
