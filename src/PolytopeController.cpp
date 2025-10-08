@@ -3,8 +3,30 @@
 
 using DynamicPolytope = mc_dynamic_polytopes::DynamicPolytope;
 
+static inline mc_rbdyn::RobotModulePtr patch_rm(mc_rbdyn::RobotModulePtr rm, const mc_rtc::Configuration & config)
+{
+  mc_rtc::log::info("Patching robot module: {}", rm->name);
+  auto limits = config("Limits", mc_rtc::Configuration{})(rm->name, mc_rtc::Configuration{})
+                    .
+                operator std::map<std::string, mc_rtc::Configuration>();
+  for(const auto & [joint, overwrite] : limits)
+  {
+    if(overwrite.has("lower"))
+    {
+      rm->_bounds[0].at(joint)[0] = overwrite("lower").operator double();
+      mc_rtc::log::info(" - Overwriting joint {} lower bound: {}", joint, rm->_bounds[0].at(joint)[0]);
+    }
+    if(overwrite.has("upper"))
+    {
+      rm->_bounds[1].at(joint)[0] = overwrite("upper").operator double();
+      mc_rtc::log::info(" - Overwriting joint {} upper bound: {}", joint, rm->_bounds[1].at(joint)[0]);
+    }
+  }
+  return rm;
+}
+
 PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, const mc_rtc::Configuration & config)
-: mc_control::fsm::Controller(rm, dt, config, {mc_solver::QPSolver::Backend::TVM})
+: mc_control::fsm::Controller(patch_rm(rm, config), dt, config, {mc_solver::QPSolver::Backend::TVM})
 {
   datastore().make_call("KinematicAnchorFrame::" + robot().name(),
                         [this](const mc_rbdyn::Robot & robot) {

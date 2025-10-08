@@ -17,6 +17,11 @@ StatesFiles:
 # If true, state factory will be more verbose
 VerboseStateFactory: false
 
+Limits:
+  rhps1:
+    R_SHOULDER_R:
+      upper: -0.3
+
 polytopeControllerInitPose:
   hrp4:
     translation:
@@ -59,6 +64,7 @@ constraints:
   #damper: [0.1, 0.01, 0.5]
   # damper is [interaction distance, safety distance, offset]
   damper: [0.2, 0.01, 0.5]
+  velocityPercent: 1.0
   # infTorque: true
 # - type: dynamics
 #   robot: box
