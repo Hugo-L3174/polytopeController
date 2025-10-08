@@ -16,6 +16,7 @@ StatesFiles:
 - "@MC_STATES_RUNTIME_INSTALL_PREFIX@/data"
 # If true, state factory will be more verbose
 VerboseStateFactory: false
+ResetPostures: false
 
 Limits:
   rhps1:
@@ -46,7 +47,7 @@ robots:
   wall:
     module: env/ground
     init_pos:
-      translation: [0.75, -0.2, 1.0]
+      translation: [0.75, -0.3, 1.0]
       # translation: [1.2, -0.6, 1.0]
       rotation: [0.0, -1.57, 0.0]
   # rhps1_interact:
@@ -63,7 +64,7 @@ constraints:
   # damper: [0.4, 0.2, 1]
   #damper: [0.1, 0.01, 0.5]
   # damper is [interaction distance, safety distance, offset]
-  damper: [0.2, 0.01, 0.5]
+  damper: [0.1, 0.01, 0.5]
   velocityPercent: 1.0
   # infTorque: true
 # - type: dynamics
@@ -343,16 +344,17 @@ states:
   HandsFrontAndWallSafe:
     base: MetaTasks
     tasks:
-      # RightHandTraj:
-      #   type: transform
-      #   frame: RightHand
-      #   weight: 1000
-      #   stiffness: 3
-      #   target:
-      #     rotation: [0., -1.57, -1.57]
-      #     translation: [-0.3, -0.2, 1.1]
-      #   completion:
-      #     eval: 0.01
+      RightHandTraj: &right-hand-traj
+        type: transform
+        frame: RightHand
+        weight: 1000
+        stiffness: 3
+        target:
+          rotation: [0., -1., -1.57]
+          # -y forward
+          translation: [-0.2, -0.3, 1.1]
+        completion:
+          eval: 0.01
       LeftHandTraj:
         type: transform
         frame: LeftHand
@@ -384,16 +386,7 @@ states:
   HandsFrontAndWall:
     base: MetaTasks
     tasks:
-      # RightHandTraj:
-      #   type: transform
-      #   frame: RightHand
-      #   weight: 1000
-      #   stiffness: 3
-      #   target:
-      #     rotation: [0., -1.57, -1.57]
-      #     translation: [-0.3, -0.3, 1.0]
-      #   completion:
-      #     eval: 0.01
+      RightHandTraj: *right-hand-traj
       LeftHandTraj:
         type: transform
         frame: LeftHand
@@ -424,17 +417,41 @@ states:
   HoldHandsAdmi:
     base: MetaTasks
     tasks:
-      RightHandAdmi:
-        type: admittance
+      RightHandImpedance: &right-hand-impedance
+        type: impedance
         frame: RightHand
-        weight: 100
-        stiffness: 5
+        weight: 1000
+        stiffness: 15
+        target:
+          rotation: [0., -1., -1.57]
+          translation: [-0.3, 0.1, 1.1]
         wrench:
           couple: [0.0, 0.0, 0.0]
           force: [0.0, 0.0, 0.0]
-        admittance:
-          couple: [0.07, 0.07, 0.07]
-          force: [0.005, 0.005, 0.001]
+        gains:
+          mass:
+            angular: [1.0, 1.0, 1.0]
+            linear: [2.0, 2.0, 2.0]
+          damper:
+            angular: [200.0, 200.0, 200.0]
+            linear: [1000.0, 1000.0, 1000.0]
+          spring:
+            angular: [200.0, 200.0, 200.0]
+            linear: [1000.0, 1000.0, 1000.0]
+          wrench:
+            angular: [60.0, 60.0, 60.0]
+            linear: [20.0, 20.0, 20.0]
+      # RightHandAdmi:
+      #   type: admittance
+      #   frame: RightHand
+      #   weight: 100
+      #   stiffness: 5
+      #   wrench:
+      #     couple: [0.0, 0.0, 0.0]
+      #     force: [0.0, 0.0, 0.0]
+      #   admittance:
+      #     couple: [0.15, 0.15, 0.15]
+      #     force: [0.01, 0.01, 0.01]
       # LeftHandAdmi:
       #   type: admittance
       #   frame: LeftHand
@@ -454,7 +471,7 @@ states:
         r1Surface: LeftFoot
         r2Surface: AllGround
     tasks:
-      LeftFootLift:
+      LeftFootLift: &left-foot-transform-task
         type: transform
         frame: LeftFoot
         stiffness: 5
@@ -462,17 +479,18 @@ states:
           translation: [0., 0., 0.1]
         completion:
           eval: 0.02
-      RightHandAdmi:
-        type: admittance
-        frame: RightHand
-        weight: 100
-        stiffness: 5
-        wrench:
-          couple: [0.0, 0.0, 0.0]
-          force: [0.0, 0.0, 0.0]
-        admittance:
-          couple: [0.07, 0.07, 0.07]
-          force: [0.005, 0.005, 0.001]
+      RightHandImpedance: *right-hand-impedance
+      # RightHandAdmi:
+      #   type: admittance
+      #   frame: RightHand
+      #   weight: 100
+      #   stiffness: 5
+      #   wrench:
+      #     couple: [0.0, 0.0, 0.0]
+      #     force: [0.0, 0.0, 0.0]
+      #   admittance:
+      #     couple: [0.15, 0.15, 0.15]
+      #     force: [0.01, 0.01, 0.01]
     AddCollisionsAfter:
       - r1: rhps1
         r2: ground
@@ -486,23 +504,28 @@ states:
         collisions:
           - body1: L_ANKLE_P_LINK
             body2: ground
-            iDist: 0.15
-            sDist: 0.1
+            iDist: 0.05
+            sDist: 0.01
 
   HoldHandsAdmiNoFoot:
     base: MetaTasks
     tasks:
-      RightHandAdmi:
-        type: admittance
-        frame: RightHand
-        weight: 100
-        stiffness: 5
-        wrench:
-          couple: [0.0, 0.0, 0.0]
-          force: [0.0, 0.0, 0.0]
-        admittance:
-          couple: [0.07, 0.07, 0.07]
-          force: [0.005, 0.005, 0.001]
+      RightHandImpedance: *right-hand-impedance
+      LeftFootLift:
+        <<: *left-foot-transform-task
+        weight: 5
+        stiffness: 1
+      # RightHandAdmi:
+      #   type: admittance
+      #   frame: RightHand
+      #   weight: 100
+      #   stiffness: 5
+      #   wrench:
+      #     couple: [0.0, 0.0, 0.0]
+      #     force: [0.0, 0.0, 0.0]
+      #   admittance:
+      #     couple: [0.15, 0.15, 0.15]
+      #     force: [0.01, 0.01, 0.01]
 
   PositionLeftFoot:
     base: MetaTasks
@@ -714,9 +737,14 @@ transitions:
 # Dual robot states
 - [TouchHands, OK, Pause, Strict]
 
-
 # Initial state
 init: PolytopeController_Initial
+
+rhps1:
+  posture:
+    stiffness: 1
+    weight: 10
+
 
 Plugins: [ForceShoePlugin]
 
