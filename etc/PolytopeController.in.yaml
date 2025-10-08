@@ -352,7 +352,7 @@ states:
         target:
           rotation: [0., -1., -1.57]
           # -y forward
-          translation: [-0.2, -0.3, 1.1]
+          translation: [-0.2, -0.4, 1.]
         completion:
           eval: 0.01
       LeftHandTraj:
@@ -425,7 +425,8 @@ states:
         stiffness: 15
         target:
           rotation: [0., -1., -1.57]
-          translation: [-0.3, 0.1, 1.1]
+          # -y forward
+          translation: [-0.2, -0.4, 1.]
         wrench:
           couple: [0.0, 0.0, 0.0]
           force: [0.0, 0.0, 0.0]
@@ -515,10 +516,10 @@ states:
     base: MetaTasks
     tasks:
       RightHandImpedance: *right-hand-impedance
-      LeftFootLift:
-        <<: *left-foot-transform-task
-        weight: 5
-        stiffness: 1
+      # LeftFootLift:
+      #   <<: *left-foot-transform-task
+      #   weight: 5
+      #   stiffness: 1
       # RightHandAdmi:
       #   type: admittance
       #   frame: RightHand
