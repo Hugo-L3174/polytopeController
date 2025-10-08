@@ -61,11 +61,11 @@ robots:
 constraints:
 - type: contact
 - type: dynamics
-  # damper: [0.4, 0.2, 1]
-  #damper: [0.1, 0.01, 0.5]
   # damper is [interaction distance, safety distance, offset]
-  damper: [0.1, 0.01, 0.5]
-  velocityPercent: 1.0
+  damper: [0.4, 0.1, 1]
+  #damper: [0.1, 0.01, 0.5]
+  # damper: [0.1, 0.01, 0.5]
+  velocityPercent: 0.2
   # infTorque: true
 # - type: dynamics
 #   robot: box
@@ -363,7 +363,8 @@ states:
         targetSurface:
           robot: wall
           surface: AllGround
-          offset_translation: [0.2, -0.1, 0.1]
+          # +y moves hand back
+          offset_translation: [0.2, 0.15, 0.1]
         completion:
           eval: 0.01
     AddCollisions:
@@ -395,7 +396,7 @@ states:
         targetSurface:
           robot: wall
           surface: AllGround
-          offset_translation: [0.2, -0.1, 0.]
+          offset_translation: [0.2, 0.15, 0.]
         completion:
           eval: 0.01
     AddContactsAfter:
@@ -440,7 +441,8 @@ states:
             linear: [1000.0, 1000.0, 1000.0]
           wrench:
             angular: [60.0, 60.0, 60.0]
-            linear: [20.0, 20.0, 20.0]
+            # linear: [20.0, 20.0, 20.0]
+            linear: [10.0, 10.0, 10.0]
       # RightHandAdmi:
       #   type: admittance
       #   frame: RightHand
