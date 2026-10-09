@@ -1,4 +1,8 @@
 .vscode
-build
+build*
+result
 .cache/
+.direnv/
 compile_commands.json
+.superbuild/
+workspace/

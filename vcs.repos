@@ -1,0 +1,25 @@
+repositories:
+  dcm-vrptask:
+    type: git
+    url: https://github.com/Hugo-L3174/DCM_VRPTask
+    version: topic/v2
+  mc-state-observation:
+    type: git
+    url: https://github.com/arntanguy/mc_state_observation
+    version: topic/DynamicConstraint
+  mc-dynamic-polytopes:
+    type: git
+    url: https://github.com/arntanguy/mc_dynamic_polytopes
+    version: topic/v2
+  mc-force-shoe-plugin:
+    type: git
+    url: https://github.com/arntanguy/mc_force_shoe_plugin
+    version: topic/optional
+  tvm:
+    type: git
+    url: https://github.com/Hugo-L3174/tvm
+    version: topic/DynamicConstraint
+  mc-rtc:
+    type: git
+    url: https://github.com/arntanguy/mc_rtc
+    version: topic/nix-DynamicConstraint

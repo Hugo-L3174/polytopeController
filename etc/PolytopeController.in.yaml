@@ -555,17 +555,24 @@ states:
             sDist: 0.1
     tasks:
       RightHandImpedance: *right-hand-impedance
-      LeftFootAdmi:
-        type: admittance
+      LeftFootPose:
+        type: transform
         frame: LeftFoot
-        wrench:
-          couple: [0.0, 0.0, 0.0]
-          force: [0.0, 0.0, 1.0]
-        admittance:
-          couple: [0.0, 0.0, 0.0]
-          force: [0.00, 0.00, 0.01]
-        completion:
-          wrench: [.NaN, .NaN, .NaN, .NaN, .NaN, 10]
+        stiffness: 20
+        targetSurface:
+          surface: RightFoot
+          offset_translation: [0.0, 0.2, 0.0]
+      # LeftFootAdmi:
+      #   type: admittance
+      #   frame: LeftFoot
+      #   wrench:
+      #     couple: [0.0, 0.0, 0.0]
+      #     force: [0.0, 0.0, 1.0]
+      #   admittance:
+      #     couple: [0.0, 0.0, 0.0]
+      #     force: [0.00, 0.00, -0.01]
+      #   completion:
+      #     wrench: [.NaN, .NaN, .NaN, .NaN, .NaN, 10]
 
     AddContactsAfter:
       - r2: ground
@@ -754,7 +761,7 @@ transitions:
 - [RemoveLeftFoot, OK, HoldHandsAdmiNoFoot, Strict]
 - [HoldHandsAdmiNoFoot, OK, PositionLeftFoot, Strict]
 - [PositionLeftFoot, OK, PutBackLeftFoot, Strict]
-- [PutBackLeftFoot, OK, HoldHandsAdmi2, Auto]
+- [PutBackLeftFoot, OK, HoldHandsAdmi2, Strict]
 - [HoldHandsAdmi2, OK, RemoveWallContact, Strict]
 - [RemoveWallContact, OK, HalfSitting, Auto]
 # Grab box states
