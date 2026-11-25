@@ -29,6 +29,11 @@ polytopeControllerInitPose:
       x: 0.1
       y: 0.
     rotation: [0.0, 0.0, -1.57]
+  g1_revo2:
+    translation:
+      x: 0.35
+      y: 0.
+    rotation: [0.0, 0.0, -1.57]
   rhps1:
     translation:
       x: 0.1
@@ -62,22 +67,24 @@ constraints:
 - type: contact
 - type: dynamics
   # damper is [interaction distance, safety distance, offset]
-  damper: [0.4, 0.2, 1]
+  # damper: [0.4, 0.2, 1]
   #damper: [0.1, 0.01, 0.5]
   # damper: [0.1, 0.01, 0.5]
   velocityPercent: 0.2
   # infTorque: true
-# - type: dynamics
-#   robot: box
-#   damper: [0.1, 0.01, 0.5]
-# - type: dynamics
-#   robot: rhps1_interact
-#   damper: [0.1, 0.01, 0.5]
-- type: compoundJoint
+# # - type: dynamics
+# #   robot: box
+# #   damper: [0.1, 0.01, 0.5]
+# # - type: dynamics
+# #   robot: rhps1_interact
+# #   damper: [0.1, 0.01, 0.5]
+# - type: compoundJoint
 # Collision constraint
 collisions:
 - type: collision
-  useCommon: true
+  useMinimal: false
+  useCommon: false
+  #useCommon: true
 # Initial set of contacts
 contacts:
 - r2: ground
@@ -125,6 +132,7 @@ DCM_VRPTask:
   robotMass:
     rhps1: 61.264
     hrp4: 35.178
+    g1_revo2: 35 # FIXME real mass
     rhps1_plate_plate: 59.401
   tasks:
     CoM:
@@ -158,12 +166,12 @@ VRPTask:
     startContacts:
       LeftFoot:
         minVal: 0.001
-        maxVal: 0.8
+        maxVal: 0.9
         duration: 4.
         startVal: 1.
       RightFoot:
         minVal: 0.001
-        maxVal: 0.8
+        maxVal: 0.9
         duration: 4.
         startVal: 1.
       LeftHand:
@@ -172,7 +180,7 @@ VRPTask:
         duration: 4.
       RightHand:
         minVal: 0.001
-        maxVal: 0.1
+        maxVal: 0.15
         duration: 4.
 
 VRPTask2:
@@ -349,10 +357,10 @@ states:
         frame: RightHand
         weight: 1000
         stiffness: 3
-        target:
-          rotation: [0., -1., -1.57]
+        target: &right-hand-front-target
+          rotation: [1.57, 0, -1.57]
           # -y forward
-          translation: [-0.2, -0.4, 1.]
+          translation: [0.1, -0.3, 0.8]
         completion:
           eval: 0.01
       LeftHandTraj:
@@ -360,29 +368,36 @@ states:
         frame: LeftHand
         weight: 100
         stiffness: 3
-        targetSurface:
+        targetSurface: &left-hand-wall-target
           robot: wall
           surface: AllGround
+          # +x moves hand up
           # +y moves hand back
-          offset_translation: [0.2, 0.15, 0.1]
+          offset_translation: [-0.2, 0.15, 0.1]
+          offset_rotation: [0, 0, -1.57]
         completion:
           eval: 0.01
-    AddCollisions:
-      - r1: rhps1
+    AddCollisions: &wall-collisions
+      - r1: g1_revo2
         r2: wall
         collisions:
-          - body1: L_WRIST_Y_LINK
+          - body1: left_wrist_yaw_link
             body2: ground
             iDist: 0.15
             sDist: 0.05
-    RemoveCollisionsAfter:
-      - r1: rhps1
-        r2: wall
-        collisions:
-          - body1: L_WRIST_Y_LINK
+          - body1: left_tool_connector_link
             body2: ground
             iDist: 0.15
             sDist: 0.05
+          - body1: left_thumb_proximal_link
+            body2: ground
+            iDist: 0.15
+            sDist: 0.05
+          - body1: left_thumb_metacarpal_link
+            body2: ground
+            iDist: 0.15
+            sDist: 0.05
+    RemoveCollisionsAfter: *wall-collisions
 
   HandsFrontAndWall:
     base: MetaTasks
@@ -394,9 +409,8 @@ states:
         weight: 1000
         stiffness: 5
         targetSurface:
-          robot: wall
-          surface: AllGround
-          offset_translation: [0.2, 0.15, 0.]
+          <<: *left-hand-wall-target
+          offset_translation: [-0.2, 0.15, 0]
         completion:
           eval: 0.01
     AddContactsAfter:
@@ -423,10 +437,7 @@ states:
         frame: RightHand
         weight: 1000
         stiffness: 15
-        target:
-          rotation: [0., -1., -1.57]
-          # -y forward
-          translation: [-0.2, -0.4, 1.]
+        target: *right-hand-front-target
         wrench:
           couple: [0.0, 0.0, 0.0]
           force: [0.0, 0.0, 0.0]
@@ -496,18 +507,58 @@ states:
       #   admittance:
       #     couple: [0.15, 0.15, 0.15]
       #     force: [0.01, 0.01, 0.01]
-    AddCollisionsAfter:
-      - r1: rhps1
+    AddCollisionsAfter: &collisions-leg-ground-wall
+      - r1: g1_revo2
         r2: ground
         collisions:
-          - body1: L_ANKLE_P_LINK
+          - body1: left_knee_link
             body2: ground
             iDist: 0.15
             sDist: 0.1
-      - r1: rhps1
+          - body1: left_ankle_pitch_link
+            body2: ground
+            iDist: 0.15
+            sDist: 0.1
+          - body1: left_ankle_roll_link_0
+            body2: ground
+            iDist: 0.15
+            sDist: 0.1
+          - body1: left_ankle_roll_link_1
+            body2: ground
+            iDist: 0.15
+            sDist: 0.1
+          - body1: left_ankle_roll_link_2
+            body2: ground
+            iDist: 0.15
+            sDist: 0.1
+          - body1: left_ankle_roll_link_3
+            body2: ground
+            iDist: 0.15
+            sDist: 0.1
+      - r1: g1_revo2
         r2: wall
         collisions:
-          - body1: L_ANKLE_P_LINK
+          - body1: left_knee_link
+            body2: ground
+            iDist: 0.1
+            sDist: 0.05
+          - body1: left_ankle_pitch_link
+            body2: ground
+            iDist: 0.1
+            sDist: 0.05
+          - body1: left_ankle_roll_link_0
+            body2: ground
+            iDist: 0.1
+            sDist: 0.05
+          - body1: left_ankle_roll_link_1
+            body2: ground
+            iDist: 0.1
+            sDist: 0.05
+          - body1: left_ankle_roll_link_2
+            body2: ground
+            iDist: 0.1
+            sDist: 0.05
+          - body1: left_ankle_roll_link_3
             body2: ground
             iDist: 0.1
             sDist: 0.05
@@ -545,14 +596,7 @@ states:
 
   PutBackLeftFoot:
     base: MetaTasks
-    RemoveCollisions:
-      - r1: rhps1
-        r2: ground
-        collisions:
-          - body1: L_ANKLE_P_LINK
-            body2: ground
-            iDist: 0.15
-            sDist: 0.1
+    RemoveCollisions: *collisions-leg-ground-wall
     tasks:
       RightHandImpedance: *right-hand-impedance
       LeftFootAdmi:

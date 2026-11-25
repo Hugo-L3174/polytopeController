@@ -1,0 +1,14 @@
+MainRobot: RHPS1_forceshoe_forceshoe_lirmm_lirmm
+Timestep: 0.002
+Enabled: Posture
+
+ObserverPipelines:
+- name: Encoders                    # - Create a new pipeline
+  gui: true                              #   diplay the pipeline in the GUI (default = false)
+  log: true                              #   log observers (default)
+  observers:                             #   declare which observers to use
+  - type: Encoder                        # - Use an EncoderObserver
+    config:
+      position: encoderValues            #    - Sets joint position from encoder sensor values (default)
+      velocity: encoderFiniteDifferences #    - Computes joint velocities by finite differences  (default)
+      computeFV: true                    # We now have the estimation of each joint position and velocity and the corresponding body positions and velocities, but we are still missing the floating base

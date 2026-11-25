@@ -28,6 +28,21 @@ static inline mc_rbdyn::RobotModulePtr patch_rm(mc_rbdyn::RobotModulePtr rm, con
 PolytopeController::PolytopeController(mc_rbdyn::RobotModulePtr rm, double dt, const mc_rtc::Configuration & config)
 : mc_control::fsm::Controller(patch_rm(rm, config), dt, config, {mc_solver::QPSolver::Backend::TVM})
 {
+
+  if(robot().name() == "g1_revo2")
+  { // Alias surfaces
+    // FIXME: hack surface names, TODO: add it to mc_rtc
+    auto addSurfaceWithNames = [&](const std::string & fromName, const std::string & toName)
+    {
+      auto & surface = robot().surface(fromName);
+      auto newSurface = surface.copy();
+      newSurface->name(toName);
+      robot().addSurface(newSurface);
+    };
+    addSurfaceWithNames("LeftPalm", "LeftHand");
+    addSurfaceWithNames("RightPalm", "RightHand");
+  }
+
   datastore().make_call("KinematicAnchorFrame::" + robot().name(),
                         [this](const mc_rbdyn::Robot & robot) {
                           return sva::interpolate(robot.surfacePose("LeftFoot"), robot.surfacePose("RightFoot"), 0.5);
